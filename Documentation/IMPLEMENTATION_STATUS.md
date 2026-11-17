@@ -1,3 +1,5 @@
+> Final update: also read [FINAL_ALIGNMENT_AND_TEAM_GUIDE.md](FINAL_ALIGNMENT_AND_TEAM_GUIDE.md). Frozen ESM-2 + CNN, validation-selected property flags, selectable weighted ranking and similarity/composition audits are now implemented. The compact baseline remains the validation-selected default.
+
 # Current implementation status
 
 Updated 17 November 2026. This supersedes implementation-status statements in the earlier read-only handover audit; historical audit observations remain preserved.

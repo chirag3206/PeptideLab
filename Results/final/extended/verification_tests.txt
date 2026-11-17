@@ -1,11 +1,20 @@
-test_controlled_study_has_matched_disjoint_splits (test_dataset_explorer.DatasetTests.test_controlled_study_has_matched_disjoint_splits) ... ok
-test_dataset_prediction_and_history_interface (test_dataset_explorer.DatasetTests.test_dataset_prediction_and_history_interface) ... 2026-11-17 18:19:32.543 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_esm_saved_metrics_and_live_predictions (test_alignment.FinalAlignmentTests.test_esm_saved_metrics_and_live_predictions) ... 
+Loading weights:   0%|          | 0/107 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 107/107 [00:00<00:00, 5440.48it/s]
+[1mEsmModel LOAD REPORT[0m from: D:\College\SL\Project\Project_main\Models\esm2_backbone
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+lm_head.bias                | UNEXPECTED |  | 
+esm.embeddings.position_ids | UNEXPECTED |  | 
+lm_head.layer_norm.bias     | UNEXPECTED |  | 
+lm_head.dense.weight        | UNEXPECTED |  | 
+lm_head.dense.bias          | UNEXPECTED |  | 
+lm_head.layer_norm.weight   | UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
 ok
-test_filters_and_unknown_labels (test_dataset_explorer.DatasetTests.test_filters_and_unknown_labels) ... ok
-test_labels_join_by_sequence_not_rank (test_dataset_explorer.DatasetTests.test_labels_join_by_sequence_not_rank) ... ok
-test_research_page_and_preserved_model_weights (test_dataset_explorer.DatasetTests.test_research_page_and_preserved_model_weights) ... 2026-11-17 18:19:39.221 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-ok
-test_navigation_screening_and_generation (test_interface.InterfaceTests.test_navigation_screening_and_generation) ... 2026-11-17 18:19:39.346 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_new_dashboard_pages_and_conditional_controls (test_alignment.FinalAlignmentTests.test_new_dashboard_pages_and_conditional_controls) ... 2026-11-17 18:57:48.958 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
 C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\streamlit\elements\vega_charts.py:358: AltairDeprecationWarning: 
 Deprecated since `altair=5.5.0`. Use altair.theme instead.
 Most cases require only the following change:
@@ -36,6 +45,17 @@ See the updated User Guide for further details:
     https://altair-viz.github.io/user_guide/customization.html#chart-themes
   with alt.themes.enable("none") if alt.themes.active == "default" else nullcontext():  # type: ignore[attr-defined,unused-ignore]
 ok
+test_validation_threshold_provenance (test_alignment.FinalAlignmentTests.test_validation_threshold_provenance) ... ok
+test_weighted_ranking_and_property_flags (test_alignment.FinalAlignmentTests.test_weighted_ranking_and_property_flags) ... ok
+test_controlled_study_has_matched_disjoint_splits (test_dataset_explorer.DatasetTests.test_controlled_study_has_matched_disjoint_splits) ... ok
+test_dataset_prediction_and_history_interface (test_dataset_explorer.DatasetTests.test_dataset_prediction_and_history_interface) ... 2026-11-17 18:57:51.111 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok
+test_filters_and_unknown_labels (test_dataset_explorer.DatasetTests.test_filters_and_unknown_labels) ... ok
+test_labels_join_by_sequence_not_rank (test_dataset_explorer.DatasetTests.test_labels_join_by_sequence_not_rank) ... ok
+test_research_page_and_preserved_model_weights (test_dataset_explorer.DatasetTests.test_research_page_and_preserved_model_weights) ... 2026-11-17 18:57:52.052 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok
+test_navigation_screening_and_generation (test_interface.InterfaceTests.test_navigation_screening_and_generation) ... 2026-11-17 18:57:52.251 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok
 test_metrics_recomputed_from_predictions (test_project.DataIntegrityTests.test_metrics_recomputed_from_predictions) ... ok
 test_splits_do_not_share_exact_sequences (test_project.DataIntegrityTests.test_splits_do_not_share_exact_sequences) ... ok
 test_fasta_and_duplicates (test_project.InputTests.test_fasta_and_duplicates) ... ok
@@ -45,6 +65,6 @@ test_generated_candidates_are_reproducible_valid_and_novel (test_project.Pipelin
 test_predictions_and_ranking (test_project.PipelineTests.test_predictions_and_ranking) ... ok
 
 ----------------------------------------------------------------------
-Ran 13 tests in 8.732s
+Ran 17 tests in 22.467s
 
 OK

@@ -1,0 +1,26 @@
+{
+  "tasks": [
+    {
+      "task": "activity",
+      "test_rows": 8877,
+      "training_rows": 10671,
+      "test_with_training_similarity_ge_0_8": 943,
+      "fraction": 0.1062295820660133
+    },
+    {
+      "task": "toxicity",
+      "test_rows": 580,
+      "training_rows": 2627,
+      "test_with_training_similarity_ge_0_8": 118,
+      "fraction": 0.20344827586206896
+    },
+    {
+      "task": "vae",
+      "test_rows": 651,
+      "training_rows": 5208,
+      "test_with_training_similarity_ge_0_8": 421,
+      "fraction": 0.6466973886328725
+    }
+  ],
+  "method": "Exhaustive normalized Levenshtein similarity >= 0.8 against training sequences (1 - edit_distance/max_length). Scores below cutoff are not stored. This is an edit-similarity diagnostic, not BLAST identity, evolutionary homology, or a clustered split. No weights, thresholds or split assignments are changed from test findings."
+}

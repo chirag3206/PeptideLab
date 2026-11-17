@@ -8,6 +8,14 @@ Built for **DSC4804 ? Statistical Learning**, the project combines an LSTM varia
 
 > Research prototype: predictions are computational estimates. They do not establish experimental antimicrobial efficacy or biological safety.
 
+## Final document alignment
+
+The final project includes a trained **ESM-2 + CNN** alternative, measured against the compact models on the same splits. The compact models remain the default because both achieved higher validation ROC-AUC. Choose either engine in the dashboard.
+
+Read [Final alignment and team guide](Documentation/FINAL_ALIGNMENT_AND_TEAM_GUIDE.md) for the combined charter, literature-review and presentation mapping, architecture, actual results and demo steps. Read [Presentation update guide](Documentation/PRESENTATION_UPDATE_GUIDE.md) before presenting the older slides.
+
+Sequence filtering and validation-selected property screening are separate. Every sequence-filter survivor remains ranked, plotted and exported, with its property-screen flag. Both product and weighted-difference ranking are available. New evidence includes sequence-similarity overlap, amino-acid composition and total VAE loss.
+
 ## Features
 
 - **Generate and rank:** sample peptide candidates from a trained VAE, apply sequence-quality filters, predict activity and toxicity, and export a ranked shortlist.

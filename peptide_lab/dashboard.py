@@ -44,6 +44,8 @@ def dataset_page(pipeline, table):
     st.write('Choose existing peptides and run both predictors. Dataset labels are shown only where available; GRAMPA membership does not supply a toxicity label.')
     c1, c2, c3 = st.columns(3)
     source = c1.selectbox('Dataset', SOURCES, key='dataset_source')
+    explanations = {'GRAMPA':'Generator source pool. Benchmark activity/toxicity labels may be unavailable.', 'Activity benchmark':'Known labels: 1 = antimicrobial, 0 = non-antimicrobial. Both properties are predicted.', 'Toxicity benchmark':'Known labels: 1 = toxic, 0 = non-toxic. Both properties are predicted.'}
+    st.info(explanations[source])
     split = c2.selectbox('Source dataset split', ['All','test','validation','train'], disabled=source=='GRAMPA', key='dataset_split')
     label = c3.selectbox('Known source label', ['All','1','0'], disabled=source=='GRAMPA', key='dataset_label', help='Activity: 1=antimicrobial. Toxicity: 1=toxic.')
     c1, c2 = st.columns([2,1])
@@ -59,12 +61,19 @@ def dataset_page(pipeline, table):
     view = filtered.iloc[(page_number-1)*50:page_number*50]
     st.dataframe(view, hide_index=True, use_container_width=True)
     st.download_button('Download filtered dataset', filtered.to_csv(index=False).encode(), 'filtered_dataset.csv','text/csv')
+    mode = st.selectbox('Prediction batch', ['Selected peptides','Random sample of filtered dataset','First rows of filtered dataset'], key='dataset_batch_mode')
     with st.form('dataset_predict'):
-        selection = st.multiselect('Select peptides from this page',view.sequence.tolist(),default=view.sequence.head(3).tolist())
-        c1,c2,c3 = st.columns(3)
-        mode = c1.selectbox('Prediction batch', ['Selected peptides','Random sample of filtered dataset','First rows of filtered dataset'])
-        count = c2.number_input('Batch size (sample / first rows)',1,500,25)
-        seed = c3.number_input('Dataset sample seed',0,999999,42)
+        selection, count, seed = [], 25, 42
+        if mode == 'Selected peptides':
+            st.caption('Choose the individual sequences to predict from the current 50-row page.')
+            selection = st.multiselect('Select peptides from this page', view.sequence.tolist(), default=view.sequence.head(3).tolist())
+        else:
+            count = st.number_input('Number of peptides to predict', 1, 500, 25)
+            if mode.startswith('Random'):
+                seed = st.number_input('Random sample seed', 0, 999999, 42)
+                st.caption('Random sampling uses all matching rows across pages. The same filters and seed reproduce the selection.')
+            else:
+                st.caption('Uses the first matching rows across pages; no manual selection or random seed is needed.')
         run = st.form_submit_button('Predict dataset activity & toxicity',type='primary')
     if run:
         if mode=='Selected peptides':
@@ -112,6 +121,8 @@ def history_page(table):
     st.caption('History is session-local and clears on a new session. Download CSVs to retain your work.')
 
 def research_page():
+    from .esm_dashboard import alignment_checks_page
+    alignment_checks_page()
     path = RESULTS / 'extended/research_summary.json'
     if not path.exists():
         st.info('Extended evaluation has not been run yet. Run python -m peptide_lab.evaluation.')

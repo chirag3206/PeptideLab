@@ -1,0 +1,17 @@
+{
+  "references": [
+    {
+      "filename": "SLgroup_04.pdf",
+      "sha256": "04e106bdb4825bc9e31f4c0e477fe436a1d41e47c1cfda9e79dee8dd056e1d5d"
+    },
+    {
+      "filename": "Statistical_Learning.pdf",
+      "sha256": "0705e865661f305b960a0914c22beb7e99677ea9b7e63f6cd9e10a9f7e4ea735"
+    },
+    {
+      "filename": "AMP_Statistical_Learning_Project_Presentation_Final.pptx",
+      "sha256": "d9a94be51897b071a9ed84da96c5373968dfce3526b432eb287058417eacc07d"
+    }
+  ],
+  "note": "Read-only reference documents; original files are not redistributed in this repository."
+}

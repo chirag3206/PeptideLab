@@ -1,0 +1,46 @@
+{
+  "compact": {
+    "activity": {
+      "threshold": 0.49,
+      "rule": "Maximize validation F1 over 0.01..0.99; ties use higher cutoff.",
+      "validation_rows": 2668,
+      "validation_sha256": "f268e0423c55fbca564bc32e797e3f94a604375f9a47b304c744ad7aab5bb2c6",
+      "recall": 0.9442282749675746,
+      "precision": 0.9516339869281045,
+      "f1": 0.9479166666666666,
+      "protocol": "Follow-up validation-only screening rule; benchmark classification metrics retain threshold 0.5. Not a safety guarantee."
+    },
+    "toxicity": {
+      "threshold": 0.08,
+      "rule": "Highest grid cutoff with validation toxic-class recall >= 0.95; fallback zero.",
+      "validation_rows": 657,
+      "validation_sha256": "5315ec5cf86727c9d2a85e3b04d2155bd27ea1bc7ff1d666a20105bf75a5b7d4",
+      "recall": 0.9519519519519519,
+      "precision": 0.8637602179836512,
+      "f1": 0.9057142857142857,
+      "protocol": "Follow-up validation-only screening rule; benchmark classification metrics retain threshold 0.5. Not a safety guarantee."
+    }
+  },
+  "esm2": {
+    "activity": {
+      "threshold": 0.85,
+      "rule": "Maximize validation F1 over 0.01..0.99; ties use higher cutoff.",
+      "validation_rows": 2668,
+      "validation_sha256": "f268e0423c55fbca564bc32e797e3f94a604375f9a47b304c744ad7aab5bb2c6",
+      "recall": 0.9286640726329443,
+      "precision": 0.9496021220159151,
+      "f1": 0.939016393442623,
+      "protocol": "Follow-up validation-only screening rule; benchmark classification metrics retain threshold 0.5. Not a safety guarantee."
+    },
+    "toxicity": {
+      "threshold": 0.14,
+      "rule": "Highest grid cutoff with validation toxic-class recall >= 0.95; fallback zero.",
+      "validation_rows": 657,
+      "validation_sha256": "5315ec5cf86727c9d2a85e3b04d2155bd27ea1bc7ff1d666a20105bf75a5b7d4",
+      "recall": 0.9519519519519519,
+      "precision": 0.8408488063660478,
+      "f1": 0.8929577464788733,
+      "protocol": "Follow-up validation-only screening rule; benchmark classification metrics retain threshold 0.5. Not a safety guarantee."
+    }
+  }
+}

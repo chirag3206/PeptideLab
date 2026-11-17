@@ -22,33 +22,49 @@ h1,h2,h3 {color:#102d42; letter-spacing:-.025em;}
 </style>''', unsafe_allow_html=True)
 st.sidebar.title('🧬 PeptideLab')
 st.sidebar.caption('STATISTICAL LEARNING · GROUP 4')
-page = st.sidebar.radio('Workspace', ['Overview', 'Dataset explorer', 'Generate & rank', 'Screen sequences', 'Prediction history', 'Model results', 'Research checks', 'Learn the project'])
+page = st.sidebar.radio('Workspace', ['Overview', 'Dataset explorer', 'Generate & rank', 'Screen sequences', 'Prediction history', 'Model results', 'Research checks', 'ESM-2 comparison', 'Learn the project'])
 st.sidebar.divider()
+esm_ready = all((ROOT / f'Models/esm2_heads/{task}.pt').exists() for task in ['activity','toxicity'])
+if esm_ready:
+    st.sidebar.selectbox('Prediction engine', ['Compact baseline (fast)', 'ESM-2 + CNN'], key='prediction_engine_choice', help='Applies to new dataset, custom and generation predictions. Saved history retains its original engine.')
+    st.sidebar.caption('Model results shows the compact benchmark. ESM-2 comparison shows the pretrained model evaluation.')
+
 st.sidebar.caption('Local inference · CPU ready\n\nVAE generation + activity and toxicity screening')
+st.sidebar.selectbox('Ranking rule', ['Product', 'Weighted difference'], key='rank_rule')
+if st.session_state.rank_rule == 'Weighted difference':
+    st.sidebar.slider('Activity weight', 0.0, 1.0, .5, .05, key='rank_weight')
+st.sidebar.caption('Choose preferences before running predictions. Existing results retain their original settings.')
 st.sidebar.info('Research predictions only. Scores do not establish experimental activity or safety.')
 
 def read_json(name):
     return json.loads((RESULTS / name).read_text(encoding='utf-8'))
 
 @st.cache_resource
-def pipeline():
+def load_pipeline(engine, rule, weight):
     from peptide_lab.pipeline import ScreeningPipeline
-    return ScreeningPipeline()
+    return ScreeningPipeline(engine=engine, ranking_rule=rule, activity_weight=weight)
+
+def pipeline():
+    return load_pipeline('esm2' if st.session_state.get('prediction_engine_choice') == 'ESM-2 + CNN' else 'compact', 'weighted_difference' if st.session_state.get('rank_rule') == 'Weighted difference' else 'product', st.session_state.get('rank_weight', .5))
 
 def hero(title, subtitle):
     st.markdown(f'<div class="hero"><div class="eyebrow">PEPTIDELAB / RESEARCH WORKSPACE</div><h1>{title}</h1><p>{subtitle}</p></div>', unsafe_allow_html=True)
 
 def table(frame):
-    preferred = ['rank', 'sequence', 'priority_score', 'activity_score', 'activity_prediction', 'toxicity_score', 'toxicity_prediction', 'length', 'seen_in_grampa', 'seen_in_classifier_training']
+    preferred = ['rank', 'sequence', 'priority_score', 'activity_score', 'activity_prediction', 'toxicity_score', 'toxicity_prediction', 'passes_property_screen', 'length', 'seen_in_grampa', 'seen_in_classifier_training']
     st.dataframe(frame[[c for c in preferred if c in frame]], hide_index=True, use_container_width=True, column_config={
         'priority_score': st.column_config.ProgressColumn('Priority / 100', min_value=0, max_value=100, format='%.1f'),
         'activity_score': st.column_config.NumberColumn('Activity score ↑', format='%.3f'),
         'toxicity_score': st.column_config.NumberColumn('Toxicity score ↓', format='%.3f'),
     })
+    if 'prediction_engine' in frame and not frame.empty:
+        st.caption('Prediction engine for these results: ' + ', '.join(frame.prediction_engine.unique()))
     st.download_button('Download complete results · CSV', frame.to_csv(index=False).encode(), 'peptidelab_results.csv', 'text/csv')
     with st.expander('How to interpret these results'):
         st.write('Activity score: support for the antimicrobial class. Toxicity score: support for the toxic class. Both are model scores, not calibrated probabilities. Classification threshold = 0.5.')
-        st.code('priority = 100 × activity_score × (1 − toxicity_score)', language=None)
+        st.write('Product: 100*A*(1-T). Weighted difference: w*A-(1-w)*T, shifted by (1-w) and multiplied by 100 for display; sorting is unchanged. The CSV records the rule and weight.')
+        st.write('Property screen: activity above its validation-selected cutoff AND toxicity below its validation-selected cutoff. All sequence-filter survivors remain ranked and exported, including property-screen failures. This flag is not experimental validation.')
+        st.code('baseline priority = 100 × activity_score × (1 − toxicity_score)', language=None)
         st.write('Priority is a transparent ranking rule, not a probability of clinical success. Novelty checks exact matches only. A sequence can resemble a known peptide without being an exact match.')
         st.write('The complete CSV includes model disagreement and simple sequence descriptors. Charge is K + R − D − E, an approximate descriptor rather than a pH-dependent charge calculation.')
 
@@ -93,6 +109,11 @@ elif page == 'Prediction history':
     hero('Your recent prediction runs.', 'Revisit generated, custom, and dataset predictions and export complete results.')
     history_page(table)
 
+elif page == 'ESM-2 comparison':
+    hero('Pretrained protein representations.', 'Compare ESM-2 plus CNN with the compact baseline on the same saved splits.')
+    from peptide_lab.esm_dashboard import esm_page
+    esm_page(pipeline)
+
 elif page == 'Research checks':
     hero('Inspect the research evidence.', 'Reproducible preprocessing, latent diagnostics, baseline checks, and ranking sensitivity.')
     research_page()
@@ -122,6 +143,8 @@ elif page == 'Generate & rank':
         cs[0].metric('Sampled', audit['sampled'])
         cs[1].metric('Passed filters', audit['passed_filters'])
         cs[2].metric('Ranked & exported', len(frame))
+        if 'passed_property_screen' in audit:
+            st.caption(f"Passed validation-selected property screen: {audit['passed_property_screen']} of {len(frame)}. All sequence-filter survivors remain available below.")
         if frame.empty:
             st.warning('No sequences passed the filters. Try a wider length range or another seed.')
         if not frame.empty:
@@ -133,7 +156,7 @@ elif page == 'Generate & rank':
                 color=alt.Color('priority_score:Q', title='Priority / 100'),
                 tooltip=[alt.Tooltip('rank:Q', title='Rank', format='d'), 'sequence:N',
                          alt.Tooltip('priority_score:Q', format='.3f'), alt.Tooltip('activity_score:Q', format='.4f'),
-                         alt.Tooltip('toxicity_score:Q', format='.4f'), 'length:Q']
+                         alt.Tooltip('toxicity_score:Q', format='.4f'), 'passes_property_screen:N', 'length:Q']
             ).interactive()
             st.altair_chart(chart, use_container_width=True)
             st.caption(f'All {len(frame)} passed-filter peptides are plotted. Hover to see rank and sequence. Points may overlap.')
@@ -234,7 +257,7 @@ else:
         '5. What is training vs validation vs test?': 'Training adjusts weights. Validation selects a checkpoint and model. The published test split is reserved for final evaluation. Identical sequences cannot appear across splits after cleaning. Similar, nonidentical sequences can still cross splits.',
         '6. What do the metrics mean?': 'Precision: how many predicted positives are correct. Recall: how many actual positives are found. F1 balances both. ROC-AUC measures ordering of positives vs negatives across thresholds. MCC measures classification agreement while accounting for all four confusion-matrix cells.',
         '7. How do we rank candidates?': 'Priority = 100 × activity score × (1 − toxicity score). A candidate needs both a high activity score and a low toxicity score to rank highly. This is a decision rule, not proof that it works or is safe.',
-        '8. How is this different from UniDL4BioPep?': 'We use its published benchmark data, not its reported results or pretrained weights. Our compact CNN learns residue embeddings directly and adds interpretable features; we do not claim to reproduce its ESM-2 embedding architecture.',
+        '8. How is this different from UniDL4BioPep?': 'We use its published benchmark data, not its reported results or pretrained weights. Our compact CNN learns residue embeddings directly and adds interpretable features; a separate frozen ESM-2 plus CNN engine is also available. Both are adaptations, not exact paper reproductions.',
         '9. What are the limitations?': 'No laboratory experiments; no MIC or bacterial-species prediction; toxicity labels are dataset-specific; similarity leakage and length bias remain possible; classifier scores are not calibrated; sequence novelty is exact-match novelty only.',
     }
     for title, body in explanations.items():

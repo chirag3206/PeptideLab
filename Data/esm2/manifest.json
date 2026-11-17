@@ -1,0 +1,41 @@
+{
+  "fingerprint": "446d5b771dccafadef754d8b810e976b6c2b7fb864aae8722a1ebb0ae6db933d",
+  "rows": 25773,
+  "dimension": 320,
+  "pooling": "Mean of residue tokens from last hidden state; special/padding excluded.",
+  "backbone": {
+    "model": "facebook/esm2_t6_8M_UR50D",
+    "revision": "c731040fcd8d73dceaa04b0a8e6329b345b0f5df",
+    "license": "MIT (see official model card)",
+    "files": {
+      "config.json": {
+        "url": "https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/c731040fcd8d73dceaa04b0a8e6329b345b0f5df/config.json",
+        "sha256": "facb9355e8252149f6f99dff5fd1e32e890c3c655362b261d0c81cd6b5839c85"
+      },
+      "tokenizer_config.json": {
+        "url": "https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/c731040fcd8d73dceaa04b0a8e6329b345b0f5df/tokenizer_config.json",
+        "sha256": "7e9161ecdb548ec45a41cbc6b24aa4476fdd418461f491c4207baa99419a29ad"
+      },
+      "special_tokens_map.json": {
+        "url": "https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/c731040fcd8d73dceaa04b0a8e6329b345b0f5df/special_tokens_map.json",
+        "sha256": "3aedcd4211c0d43aec4e607ff60a63255f3174ead795e997350f09a5f8cd9ee1"
+      },
+      "vocab.txt": {
+        "url": "https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/c731040fcd8d73dceaa04b0a8e6329b345b0f5df/vocab.txt",
+        "sha256": "0b82cc0a7c7cf9e567b1e5892d793285b9fbae822c964ca48696f7db44598e03"
+      },
+      "model.safetensors": {
+        "url": "https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/c731040fcd8d73dceaa04b0a8e6329b345b0f5df/model.safetensors",
+        "sha256": "24c5fa474c48f3b754b86efe752d5f189d2bcd88190fa2270fc92b2ef3034189"
+      },
+      "README.md": {
+        "url": "https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/c731040fcd8d73dceaa04b0a8e6329b345b0f5df/README.md",
+        "sha256": "462a2f24724e19c6be0efab926315c294a863c9a9770e2c8b3d859b2d81a07de"
+      }
+    }
+  },
+  "cache_files_sha256": {
+    "sequences.csv": "01109df6d0cff4ba858d995d639746480e0f4b63521860cf6c1d9c70f8ddbe1c",
+    "embeddings.npy": "7852798768c3559ff2230f54d854e1706e7bc1ca77b6000d0a9e726492b3dfbd"
+  }
+}

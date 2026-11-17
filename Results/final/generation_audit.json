@@ -15,5 +15,8 @@
     10,
     40
   ],
-  "selection": "All passed-filter sequences scored and ranked together. No laboratory validation."
+  "selection": "All passed-filter sequences scored and ranked together. No laboratory validation.",
+  "prediction_engine": "compact",
+  "ranking_rule": "product",
+  "passed_property_screen": 436
 }

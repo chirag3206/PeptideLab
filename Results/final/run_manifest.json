@@ -1,5 +1,5 @@
 {
-  "created_utc": "2026-11-17T12:49:58.816507+00:00",
+  "created_utc": "2026-11-17T13:26:33.466437+00:00",
   "python": "3.13.7",
   "seed": 42,
   "packages": {
@@ -10,7 +10,13 @@
     "streamlit": "1.40.2",
     "matplotlib": "3.10.1",
     "openpyxl": "3.1.5",
-    "joblib": "1.5.0"
+    "joblib": "1.5.0",
+    "transformers": "5.3.0",
+    "huggingface-hub": "1.6.0",
+    "safetensors": "0.7.0",
+    "tokenizers": "0.22.2",
+    "rapidfuzz": "3.13.0",
+    "altair": "5.5.0"
   },
   "model_sha256": {
     "activity_baseline.joblib": "bba887bee4169dc49c13dd2b9f6f6a52cf3ff992fcfed49041dc632fbab1a95e",
