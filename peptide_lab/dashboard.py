@@ -1,0 +1,146 @@
+"""Additional dashboard pages; training stays outside the user interface."""
+import json
+from datetime import datetime
+import pandas as pd
+import streamlit as st
+from .config import RESULTS
+from .datasets import catalog, browse, attach_labels, SOURCES
+
+@st.cache_data
+def load_catalog():
+    return catalog()
+
+def save_run(kind, frame, settings):
+    runs = st.session_state.setdefault('prediction_runs', [])
+    runs.append({'kind': kind, 'time': datetime.now().strftime('%H:%M:%S'), 'settings': settings, 'frame': frame.copy()})
+    del runs[:-10]
+
+def inspection(frame, key):
+    st.subheader('Inspect an individual prediction')
+    sequence = st.selectbox('Peptide to inspect', frame.sequence.tolist(), key=key)
+    row = frame.set_index('sequence').loc[sequence]
+    st.code(sequence, language=None)
+    cols = st.columns(3)
+    cols[0].metric('Activity score', f'{row.activity_score:.3f}', help='Support for antimicrobial class; not MIC.')
+    cols[1].metric('Toxicity score', f'{row.toxicity_score:.3f}', help='Support for toxic benchmark class; not a safety certificate.')
+    cols[2].metric('Priority / 100', f'{row.priority_score:.1f}')
+    st.write(f'**Predicted activity:** {row.activity_prediction} · **Predicted toxicity:** {row.toxicity_prediction}')
+    for task in ['activity', 'toxicity']:
+        label = row.get(task + '_label', pd.NA)
+        split = row.get(task + '_split', 'unknown')
+        if pd.notna(label):
+            meaning = ('Antimicrobial' if int(label) else 'Non-antimicrobial') if task=='activity' else ('Toxic' if int(label) else 'Non-toxic')
+            matches = bool(row[task + '_matches_label'])
+            st.write(f'**Known {task} label:** {meaning} · **Dataset split:** {split} · **Matches prediction:** {"Yes" if matches else "No"}')
+        else:
+            st.caption(f'No {task} benchmark label is available for this sequence. A prediction is not a measured label.')
+    with st.expander('Sequence properties and predictor agreement'):
+        st.json({name: float(row[name]) for name in ['length','charge_proxy','hydrophobic_fraction','mean_hydropathy','entropy','activity_model_disagreement','toxicity_model_disagreement']})
+        st.caption('Disagreement is the absolute difference between CNN and forest scores, not a calibrated uncertainty interval.')
+
+def dataset_page(pipeline, table):
+    st.write('Choose existing peptides and run both predictors. Dataset labels are shown only where available; GRAMPA membership does not supply a toxicity label.')
+    c1, c2, c3 = st.columns(3)
+    source = c1.selectbox('Dataset', SOURCES, key='dataset_source')
+    split = c2.selectbox('Source dataset split', ['All','test','validation','train'], disabled=source=='GRAMPA', key='dataset_split')
+    label = c3.selectbox('Known source label', ['All','1','0'], disabled=source=='GRAMPA', key='dataset_label', help='Activity: 1=antimicrobial. Toxicity: 1=toxic.')
+    c1, c2 = st.columns([2,1])
+    query = c1.text_input('Find a sequence or residue fragment', key='dataset_search')
+    lengths = c2.slider('Dataset peptide length',5,200,(5,200),key='dataset_lengths')
+    filtered = browse(load_catalog(), source, split, label, *lengths, query)
+    st.metric('Matching dataset peptides', len(filtered))
+    st.caption('Rows from training or validation sets are useful for demonstration, not independent performance estimates. Each result includes separate split membership for each predictor.')
+    if filtered.empty:
+        st.info('No sequences match. Clear the search or widen the filters.')
+        return
+    page_number = st.number_input('Browse page (50 rows per page)', 1, max(1,(len(filtered)+49)//50),1,key=f'dataset_page_{source}_{split}_{label}_{len(filtered)}')
+    view = filtered.iloc[(page_number-1)*50:page_number*50]
+    st.dataframe(view, hide_index=True, use_container_width=True)
+    st.download_button('Download filtered dataset', filtered.to_csv(index=False).encode(), 'filtered_dataset.csv','text/csv')
+    with st.form('dataset_predict'):
+        selection = st.multiselect('Select peptides from this page',view.sequence.tolist(),default=view.sequence.head(3).tolist())
+        c1,c2,c3 = st.columns(3)
+        mode = c1.selectbox('Prediction batch', ['Selected peptides','Random sample of filtered dataset','First rows of filtered dataset'])
+        count = c2.number_input('Batch size (sample / first rows)',1,500,25)
+        seed = c3.number_input('Dataset sample seed',0,999999,42)
+        run = st.form_submit_button('Predict dataset activity & toxicity',type='primary')
+    if run:
+        if mode=='Selected peptides':
+            chosen = filtered[filtered.sequence.isin(selection)]
+        elif mode.startswith('Random'):
+            chosen = filtered.sample(n=min(int(count),len(filtered)),random_state=int(seed))
+        else:
+            chosen = filtered.head(int(count))
+        if chosen.empty:
+            st.warning('Select at least one peptide.')
+            st.session_state.pop('dataset_result',None)
+        else:
+            with st.spinner('Running activity and toxicity inference on dataset sequences…'):
+                result = attach_labels(pipeline().predict(chosen.sequence.tolist()),chosen)
+            settings = {'dataset':source,'source_split':split,'known_label_filter':label,'mode':mode,'seed':int(seed),'rows':len(result)}
+            st.session_state.dataset_result = (result,settings)
+            save_run('Dataset screening',result,settings)
+    if 'dataset_result' in st.session_state:
+        result,settings = st.session_state.dataset_result
+        st.divider()
+        st.subheader('Dataset prediction results')
+        st.caption(f'Last completed run: {settings["dataset"]} · source split {settings["source_split"]} · {len(result)} peptides. Changing filters does not change these results until you run prediction again.')
+        table(result)
+        columns = ['sequence','activity_label','activity_prediction','activity_matches_label','activity_split','toxicity_label','toxicity_prediction','toxicity_matches_label','toxicity_split']
+        st.markdown('**Known labels versus model predictions**')
+        comparison = result[columns].copy()
+        # Streamlit renders nullable Boolean cells as unchecked boxes. Explicit
+        # text avoids showing a missing ground truth as a failed prediction.
+        for task in ['activity','toxicity']:
+            comparison[task+'_matches_label'] = comparison[task+'_matches_label'].map(lambda value: 'Not available' if pd.isna(value) else ('Yes' if value else 'No'))
+        st.dataframe(comparison,hide_index=True,use_container_width=True)
+        st.caption('Blank means no benchmark label exists. A correct prediction on a training sequence is not test evidence.')
+        inspection(result,'dataset_inspection')
+
+def history_page(table):
+    runs = st.session_state.get('prediction_runs',[])
+    if not runs:
+        st.info('Run generation, dataset screening, or custom screening first. Your latest 10 runs are kept in this browser session.')
+        return
+    choice = st.selectbox('Prediction run',range(len(runs)),index=len(runs)-1,format_func=lambda i:f'{i+1}. {runs[i]["kind"]} · {runs[i]["time"]} · {len(runs[i]["frame"])} peptides')
+    run = runs[choice]
+    st.json(run['settings'])
+    table(run['frame'])
+    inspection(run['frame'],'history_inspection')
+    st.caption('History is session-local and clears on a new session. Download CSVs to retain your work.')
+
+def research_page():
+    path = RESULTS / 'extended/research_summary.json'
+    if not path.exists():
+        st.info('Extended evaluation has not been run yet. Run python -m peptide_lab.evaluation.')
+        return
+    summary = json.loads(path.read_text())
+    tabs = st.tabs(['Dataset audit','Latent diagnostics','Predictor checks','Ranking sensitivity','Controlled toy study'])
+    with tabs[0]:
+        st.json(json.loads((RESULTS/'preprocessing_audit.json').read_text()))
+        st.write('The original notebooks are preserved. This audit regenerates canonical sequences directly from the raw CSV.')
+    with tabs[1]:
+        st.dataframe(pd.DataFrame(summary['latent_diagnostics']),hide_index=True,use_container_width=True)
+        st.caption('Same validation sequences and true decoder prefixes; only latent vectors change. Higher reconstruction loss with zero/shuffled vectors indicates that this decoder uses latent information. It does not prove biological meaning.')
+        st.write('Active latent dimensions (variance of encoder mean > 0.01):',summary['active_latent_dimensions'])
+        st.dataframe(pd.read_csv(RESULTS/'extended/reconstruction_examples.csv'),hide_index=True,use_container_width=True)
+    with tabs[2]:
+        st.dataframe(pd.DataFrame(summary['predictor_checks']),hide_index=True,use_container_width=True)
+        st.caption('The length-only baseline is trained only on training labels. Short-peptide results use the existing test subset; this is a post-hoc diagnostic, not a new untouched test set. Brier score measures squared probability error; displayed inference scores remain uncalibrated.')
+        st.warning('Inspect positive/negative counts and balanced accuracy: the short activity subset has very few negative examples, so its raw accuracy is not a strong generalization result.')
+        st.dataframe(pd.DataFrame(summary['confidence_intervals']),hide_index=True,use_container_width=True)
+        st.caption('95% stratified bootstrap intervals reflect test-sample variation, not training-seed or sequence-family uncertainty.')
+        for task in ['activity','toxicity']:
+            with st.expander(task.title()+' held-out errors'):
+                st.dataframe(pd.read_csv(RESULTS/f'extended/{task}_errors.csv').head(50),hide_index=True,use_container_width=True)
+    with tabs[3]:
+        st.dataframe(pd.DataFrame(summary['ranking_sensitivity']),hide_index=True,use_container_width=True)
+        st.caption('Compare the product rule with illustrative weighted activity-minus-toxicity rules. Weights express preferences; they were not learned as biological utility. Top-10 overlap measures stability on the saved candidate pool only.')
+    with tabs[4]:
+        study = RESULTS/'extended/toy_study_summary.csv'
+        if study.exists():
+            st.dataframe(pd.read_csv(study),hide_index=True,use_container_width=True)
+            st.dataframe(pd.read_csv(RESULTS/'extended/toy_study_runs.csv'),hide_index=True,use_container_width=True)
+            st.caption('New controlled experiments, not recovered historical Notebook 02B results. Ten subsets use the default configuration; latent dimension and word-dropout comparisons use three matched seeds. Small-subset findings do not establish full-dataset optimal settings.')
+        else:
+            st.info('The controlled toy study is still running or has not been executed.')

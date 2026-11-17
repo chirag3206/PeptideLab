@@ -1,0 +1,15 @@
+{
+  "raw_records": 51345,
+  "missing_sequences": 0,
+  "invalid_sequence_records": 0,
+  "duplicate_valid_records_removed": 44585,
+  "canonical_unique_sequences": 6760,
+  "length_counts": {
+    "5_40": 6154,
+    "5_60": 6510
+  },
+  "matches_historical_clean_set": true,
+  "raw_sha256": "9e33122afb3bdd169e8bed620b1040bf1601d60cf25b6c8c8d9870bf37522b6f",
+  "clean_sha256": "a7e9516a39b3f9521cac27dd3d8f33b85ef9c0dde2ba1d18cc7003f6b7dfc24e",
+  "policy": "Strip and uppercase sequence; retain 20 canonical residues; deduplicate by sequence preserving first appearance; apply explicit length bounds. No species or modification filter. Sequence-only models do not model chemical modifications or assay conditions."
+}

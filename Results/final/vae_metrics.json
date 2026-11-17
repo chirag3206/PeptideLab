@@ -1,0 +1,21 @@
+{
+  "architecture": "LSTM VAE: embedding 32, hidden 96, latent 24; word dropout 0.2; KL warmup to 0.02",
+  "splits": {
+    "train": 5208,
+    "validation": 651,
+    "test": 651
+  },
+  "length_range": [
+    5,
+    60
+  ],
+  "test_teacher_forced_token_accuracy": 0.48951866189467536,
+  "test_teacher_forced_cross_entropy": 1.6697235898725669,
+  "generated": 500,
+  "unique": 500,
+  "uniqueness": 1.0,
+  "novel_unique_vs_grampa": 1.0,
+  "natural_end_rate": 1.0,
+  "mean_entropy": 2.7083196191766974,
+  "notes": "Sampling forbids special tokens and END before 5 residues, and caps length at 60. Alphabet/length validity is enforced by decoding, not evidence of biological validity. Novelty means exact non-match to GRAMPA only. Test reconstruction uses true previous tokens and is easier than free generation."
+}

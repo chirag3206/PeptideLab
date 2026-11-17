@@ -1,0 +1,28 @@
+{
+  "raw_rows": {
+    "train": 13428,
+    "test": 8953
+  },
+  "train_invalid_or_out_of_length": 89,
+  "test_invalid_or_out_of_length": 76,
+  "conflicting_sequences_removed": 0,
+  "train_test_overlap_removed_from_train": 0,
+  "splits": {
+    "train": {
+      "rows": 10671,
+      "positive": 3082,
+      "negative": 7589
+    },
+    "validation": {
+      "rows": 2668,
+      "positive": 771,
+      "negative": 1897
+    },
+    "test": {
+      "rows": 8877,
+      "positive": 2563,
+      "negative": 6314
+    }
+  },
+  "policy": "Published test split retained; conflicting labels removed globally; exact duplicates and cross-split overlaps removed; 20% of training reserved for validation. Not a homology-clustered split."
+}

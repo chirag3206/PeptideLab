@@ -1,0 +1,22 @@
+{
+  "repository": "https://github.com/dzjxzyd/UniDL4BioPep",
+  "revision": "23d025f3cd326556a7bb53f8e90fe60124345669",
+  "files": {
+    "activity_train.xlsx": {
+      "url": "https://raw.githubusercontent.com/dzjxzyd/UniDL4BioPep/23d025f3cd326556a7bb53f8e90fe60124345669/5.%20Antimicrobial%20activity/AMP_train.xlsx",
+      "sha256": "ad965647819c808ea4e1cbc3a460a10e9045d99ecd60c38b9034d9cf80b59797"
+    },
+    "activity_test.xlsx": {
+      "url": "https://raw.githubusercontent.com/dzjxzyd/UniDL4BioPep/23d025f3cd326556a7bb53f8e90fe60124345669/5.%20Antimicrobial%20activity/AMP_test.xlsx",
+      "sha256": "8bfb886d8bbd727784cd411636f5fa312bd409a3cb5dfb1c8ef145f98c9a41f2"
+    },
+    "toxicity_train.xlsx": {
+      "url": "https://raw.githubusercontent.com/dzjxzyd/UniDL4BioPep/23d025f3cd326556a7bb53f8e90fe60124345669/17.%20Toxicity%202021%20Dataset/train_3284.xlsx",
+      "sha256": "2ab634469771b502c7e23154bbbfa60451dbd7d150a3a0c85ccbb2791677fd03"
+    },
+    "toxicity_test.xlsx": {
+      "url": "https://raw.githubusercontent.com/dzjxzyd/UniDL4BioPep/23d025f3cd326556a7bb53f8e90fe60124345669/17.%20Toxicity%202021%20Dataset/test_580.xlsx",
+      "sha256": "77896b2cb0faf72bb8f3c1e7089cf26731d87fcbbcfcd5da8c7e95e1a7f92427"
+    }
+  }
+}

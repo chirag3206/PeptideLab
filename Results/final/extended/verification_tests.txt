@@ -1,0 +1,50 @@
+test_controlled_study_has_matched_disjoint_splits (test_dataset_explorer.DatasetTests.test_controlled_study_has_matched_disjoint_splits) ... ok
+test_dataset_prediction_and_history_interface (test_dataset_explorer.DatasetTests.test_dataset_prediction_and_history_interface) ... 2026-11-17 17:31:38.567 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok
+test_filters_and_unknown_labels (test_dataset_explorer.DatasetTests.test_filters_and_unknown_labels) ... ok
+test_labels_join_by_sequence_not_rank (test_dataset_explorer.DatasetTests.test_labels_join_by_sequence_not_rank) ... ok
+test_research_page_and_preserved_model_weights (test_dataset_explorer.DatasetTests.test_research_page_and_preserved_model_weights) ... 2026-11-17 17:31:45.530 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok
+test_navigation_screening_and_generation (test_interface.InterfaceTests.test_navigation_screening_and_generation) ... 2026-11-17 17:31:45.669 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\streamlit\elements\vega_charts.py:358: AltairDeprecationWarning: 
+Deprecated since `altair=5.5.0`. Use altair.theme instead.
+Most cases require only the following change:
+
+    # Deprecated
+    alt.themes.enable('quartz')
+
+    # Updated
+    alt.theme.enable('quartz')
+
+If your code registers a theme, make the following change:
+
+    # Deprecated
+    def custom_theme():
+        return {'height': 400, 'width': 700}
+    alt.themes.register('theme_name', custom_theme)
+    alt.themes.enable('theme_name')
+
+    # Updated
+    @alt.theme.register('theme_name', enable=True)
+    def custom_theme():
+        return alt.theme.ThemeConfig(
+            {'height': 400, 'width': 700}
+        )
+
+See the updated User Guide for further details:
+    https://altair-viz.github.io/user_guide/api.html#theme
+    https://altair-viz.github.io/user_guide/customization.html#chart-themes
+  with alt.themes.enable("none") if alt.themes.active == "default" else nullcontext():  # type: ignore[attr-defined,unused-ignore]
+ok
+test_metrics_recomputed_from_predictions (test_project.DataIntegrityTests.test_metrics_recomputed_from_predictions) ... ok
+test_splits_do_not_share_exact_sequences (test_project.DataIntegrityTests.test_splits_do_not_share_exact_sequences) ... ok
+test_fasta_and_duplicates (test_project.InputTests.test_fasta_and_duplicates) ... ok
+test_invalid_input_rejected (test_project.InputTests.test_invalid_input_rejected) ... ok
+test_normalization_and_descriptors (test_project.InputTests.test_normalization_and_descriptors) ... ok
+test_generated_candidates_are_reproducible_valid_and_novel (test_project.PipelineTests.test_generated_candidates_are_reproducible_valid_and_novel) ... ok
+test_predictions_and_ranking (test_project.PipelineTests.test_predictions_and_ranking) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 10.155s
+
+OK

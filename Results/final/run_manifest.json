@@ -1,0 +1,22 @@
+{
+  "created_utc": "2026-11-16T17:51:04.167013+00:00",
+  "python": "3.13.7",
+  "seed": 42,
+  "packages": {
+    "numpy": "2.2.5",
+    "pandas": "2.2.3",
+    "scikit-learn": "1.6.1",
+    "torch": "2.10.0",
+    "streamlit": "1.40.2",
+    "matplotlib": "3.10.1",
+    "openpyxl": "3.1.5",
+    "joblib": "1.5.0"
+  },
+  "model_sha256": {
+    "activity_baseline.joblib": "bba887bee4169dc49c13dd2b9f6f6a52cf3ff992fcfed49041dc632fbab1a95e",
+    "activity_cnn.pt": "0af59c6411ef24cb022cd82580c3c9437bc752f8a06bed077e28c5f498387a36",
+    "toxicity_baseline.joblib": "8df51dfe268123e4fb117d713d4e4359eb02dee6241d5c2c37be9de342d8dc9b",
+    "toxicity_cnn.pt": "e08da430d7f0c61a7730e0f1fa09239cac3c6e2dc360bd2ace26beae43a5b763",
+    "vae.pt": "9aca0ad5090213938099fb634d773711c98cfd0a5d0a39aaa718a5c52fac2142"
+  }
+}

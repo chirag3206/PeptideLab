@@ -1,0 +1,7 @@
+Task,Model,accuracy,precision,recall,f1,mcc,roc_auc,average_precision
+Activity,cnn,0.9554,0.9211,0.9247,0.9229,0.8915,0.9882,0.9784
+Activity,random_forest,0.9589,0.9519,0.9032,0.9269,0.8989,0.9905,0.9822
+Activity,ensemble (selected),0.9619,0.9459,0.9208,0.9332,0.9067,0.9916,0.9839
+Toxicity,cnn (selected),0.9224,0.9375,0.8922,0.9143,0.8444,0.9718,0.968
+Toxicity,random_forest,0.9086,0.9,0.9033,0.9017,0.8163,0.9617,0.9528
+Toxicity,ensemble,0.9207,0.924,0.9033,0.9135,0.8405,0.9719,0.9662

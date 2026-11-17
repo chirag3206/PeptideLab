@@ -1,0 +1,21 @@
+{
+  "seed": 512,
+  "latent": 24,
+  "word_dropout": 0.2,
+  "epochs": 30,
+  "batch_size": 32,
+  "embedding": 32,
+  "hidden": 96,
+  "beta_max": 0.02,
+  "warmup_epochs": 10,
+  "length_range": [
+    5,
+    40
+  ],
+  "subset_size": 200,
+  "splits": {
+    "train": 160,
+    "validation": 20,
+    "test": 20
+  }
+}

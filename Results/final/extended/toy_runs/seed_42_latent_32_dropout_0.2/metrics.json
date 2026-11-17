@@ -1,0 +1,14 @@
+{
+  "seed": 42,
+  "latent": 32,
+  "word_dropout": 0.2,
+  "test_cross_entropy": 2.480292320251465,
+  "test_kl": 2.5505571365356445,
+  "token_accuracy": 0.25789472460746765,
+  "teacher_forced_exact_match": 0.0,
+  "uniqueness": 1.0,
+  "exact_novelty_vs_5_40_pool": 1.0,
+  "natural_end_rate": 0.95,
+  "mean_length": 18.63,
+  "mean_entropy": 2.7182100117946466
+}
