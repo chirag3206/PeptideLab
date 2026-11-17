@@ -100,7 +100,7 @@ priority_score = 100 ? activity_score ? (1 ? toxicity_score)
 
 Higher priority favors higher activity scores and lower toxicity scores. This is a transparent preference rule, not a calibrated probability of success.
 
-Generation filters remove truncated, out-of-range, very repetitive, duplicate, and exact known sequences. The pipeline ranks the first requested number of accepted candidates; it does not optimize over every possible sequence. A bounded sample pool can return fewer candidates than requested.
+Generation filters remove truncated, out-of-range, very repetitive, duplicate, and exact known sequences. Choose the number of raw sequences to sample. Every sequence that passes the filters is scored and ranked together. The table and CSV include rank (1 is best); the graph plots every accepted sequence with rank and sequence in its hover details. Passed filters and Ranked & exported have the same count.
 
 ## Data and evaluation
 

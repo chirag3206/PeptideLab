@@ -1,11 +1,11 @@
 test_controlled_study_has_matched_disjoint_splits (test_dataset_explorer.DatasetTests.test_controlled_study_has_matched_disjoint_splits) ... ok
-test_dataset_prediction_and_history_interface (test_dataset_explorer.DatasetTests.test_dataset_prediction_and_history_interface) ... 2026-11-17 17:31:38.567 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_dataset_prediction_and_history_interface (test_dataset_explorer.DatasetTests.test_dataset_prediction_and_history_interface) ... 2026-11-17 18:19:32.543 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
 ok
 test_filters_and_unknown_labels (test_dataset_explorer.DatasetTests.test_filters_and_unknown_labels) ... ok
 test_labels_join_by_sequence_not_rank (test_dataset_explorer.DatasetTests.test_labels_join_by_sequence_not_rank) ... ok
-test_research_page_and_preserved_model_weights (test_dataset_explorer.DatasetTests.test_research_page_and_preserved_model_weights) ... 2026-11-17 17:31:45.530 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_research_page_and_preserved_model_weights (test_dataset_explorer.DatasetTests.test_research_page_and_preserved_model_weights) ... 2026-11-17 18:19:39.221 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
 ok
-test_navigation_screening_and_generation (test_interface.InterfaceTests.test_navigation_screening_and_generation) ... 2026-11-17 17:31:45.669 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_navigation_screening_and_generation (test_interface.InterfaceTests.test_navigation_screening_and_generation) ... 2026-11-17 18:19:39.346 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
 C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\streamlit\elements\vega_charts.py:358: AltairDeprecationWarning: 
 Deprecated since `altair=5.5.0`. Use altair.theme instead.
 Most cases require only the following change:
@@ -45,6 +45,6 @@ test_generated_candidates_are_reproducible_valid_and_novel (test_project.Pipelin
 test_predictions_and_ranking (test_project.PipelineTests.test_predictions_and_ranking) ... ok
 
 ----------------------------------------------------------------------
-Ran 13 tests in 10.155s
+Ran 13 tests in 8.732s
 
 OK

@@ -46,13 +46,15 @@ class ScreeningPipeline:
         result['seen_in_grampa'] = result.sequence.isin(self.known)
         result['seen_in_classifier_training'] = result.sequence.isin(self.classifier_train)
         result = pd.concat([result, pd.DataFrame([properties(s) for s in sequences])], axis=1)
-        return result.sort_values('priority_score', ascending=False).reset_index(drop=True)
+        result = result.sort_values(['priority_score', 'sequence'], ascending=[False, True], kind='stable').reset_index(drop=True)
+        result.insert(0, 'rank', np.arange(1, len(result) + 1))
+        return result
 
-    def generate(self, count=30, seed=42, temperature=.9, min_length=10, max_length=40):
-        if not 1 <= count <= 200 or not 5 <= min_length <= max_length <= 60 or not .5 <= temperature <= 1.3:
+    def generate(self, count=500, seed=42, temperature=.9, min_length=10, max_length=40):
+        if not 1 <= count <= 3000 or not 5 <= min_length <= max_length <= 60 or not .5 <= temperature <= 1.3:
             raise ValueError('Use 1–200 candidates, length 5–60, and temperature 0.5–1.3.')
-        # Fixed bounded pool: report any shortage instead of pretending to fulfill it.
-        sequences, ended = self.vae.sample(max(500, count * 15), seed, temperature, 60)
+        # Score every accepted sequence from the explicitly sized sampling pool.
+        sequences, ended = self.vae.sample(count, seed, temperature, 60)
         accepted, seen = [], set()
         rejected = {'length': 0, 'truncated': 0, 'low_complexity': 0, 'known': 0, 'duplicate': 0}
         for sequence, natural_end in zip(sequences, ended):
@@ -69,14 +71,14 @@ class ScreeningPipeline:
             else:
                 seen.add(sequence)
                 accepted.append(sequence)
-        audit = {'sampled': len(sequences), 'accepted_before_limit': len(accepted), 'requested': count, 'returned': min(count, len(accepted)), 'rejected': rejected,
+        audit = {'sampled': len(sequences), 'passed_filters': len(accepted), 'returned': len(accepted), 'rejected': rejected,
                  'seed': seed, 'temperature': temperature, 'length_range': [min_length, max_length],
-                 'selection': 'First valid unique novel samples, then ranked by predictor scores. No laboratory validation.'}
-        return (self.predict(accepted[:count]) if accepted else pd.DataFrame()), audit
+                 'selection': 'All passed-filter sequences scored and ranked together. No laboratory validation.'}
+        return (self.predict(accepted) if accepted else pd.DataFrame()), audit
 
 def main():
     pipe = ScreeningPipeline()
-    candidates, audit = pipe.generate(count=50)
+    candidates, audit = pipe.generate(count=750)
     candidates.to_csv(RESULTS / 'ranked_candidates.csv', index=False)
     (RESULTS / 'generation_audit.json').write_text(json.dumps(audit, indent=2), encoding='utf-8')
     print(json.dumps(audit, indent=2))

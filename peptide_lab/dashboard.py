@@ -24,6 +24,8 @@ def inspection(frame, key):
     cols[0].metric('Activity score', f'{row.activity_score:.3f}', help='Support for antimicrobial class; not MIC.')
     cols[1].metric('Toxicity score', f'{row.toxicity_score:.3f}', help='Support for toxic benchmark class; not a safety certificate.')
     cols[2].metric('Priority / 100', f'{row.priority_score:.1f}')
+    if 'rank' in row:
+        st.caption(f'Rank {int(row["rank"])} of {len(frame)} in this run.')
     st.write(f'**Predicted activity:** {row.activity_prediction} · **Predicted toxicity:** {row.toxicity_prediction}')
     for task in ['activity', 'toxicity']:
         label = row.get(task + '_label', pd.NA)

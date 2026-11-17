@@ -52,15 +52,19 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(frame.priority_score.is_monotonic_decreasing)
 
     def test_generated_candidates_are_reproducible_valid_and_novel(self):
-        first, audit = self.pipeline.generate(5, seed=17)
-        second, _ = self.pipeline.generate(5, seed=17)
+        first, audit = self.pipeline.generate(100, seed=17)
+        second, _ = self.pipeline.generate(100, seed=17)
         self.assertGreater(len(first), 0)
         self.assertEqual(first.sequence.tolist(), second.sequence.tolist())
         self.assertEqual(len(first), first.sequence.nunique())
+        self.assertEqual(len(first), audit['passed_filters'])
+        self.assertEqual(len(first), audit['returned'])
+        self.assertEqual(first['rank'].tolist(), list(range(1, len(first)+1)))
+        self.assertEqual(pd.read_csv(__import__('io').StringIO(first.to_csv(index=False)))['rank'].tolist(), first['rank'].tolist())
         self.assertFalse(first.seen_in_grampa.any())
         self.assertFalse(first.seen_in_classifier_training.any())
         self.assertTrue(first.length.between(10, 40).all())
-        self.assertEqual(audit['sampled'], audit['accepted_before_limit'] + sum(audit['rejected'].values()))
+        self.assertEqual(audit['sampled'], audit['passed_filters'] + sum(audit['rejected'].values()))
 
 if __name__ == '__main__':
     unittest.main()

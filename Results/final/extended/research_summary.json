@@ -129,20 +129,20 @@
     {
       "activity_weight": 0.25,
       "toxicity_weight": 0.75,
-      "top_10_overlap_with_product": 1.0,
-      "spearman_rank_correlation": 0.996734693877551
+      "top_10_overlap_with_product": 0.7,
+      "spearman_rank_correlation": 0.9953489209925682
     },
     {
       "activity_weight": 0.5,
       "toxicity_weight": 0.5,
       "top_10_overlap_with_product": 1.0,
-      "spearman_rank_correlation": 0.9999999999999999
+      "spearman_rank_correlation": 0.9999941967132228
     },
     {
       "activity_weight": 0.75,
       "toxicity_weight": 0.25,
       "top_10_overlap_with_product": 0.9,
-      "spearman_rank_correlation": 0.9965426170468188
+      "spearman_rank_correlation": 0.9913149402878931
     }
   ],
   "protocol": "Post-hoc diagnostics of frozen existing models; no model selection or retraining. VAE diagnostics use validation; classifier diagnostics reuse the existing test predictions.",

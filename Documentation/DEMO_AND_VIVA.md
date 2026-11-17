@@ -87,3 +87,6 @@ All three should be able to explain the entire flow in one minute.
 **How is this different from the original notebook?** The original 200-sequence VAE often produced repeated residues. The final implementation trains on a larger cleaned subset, uses stochastic sampling, latent conditioning, dropout, KL warmup, independent predictors, explicit evaluation and an integrated UI.
 
 **Was AI used?** Yes. AI assisted implementation, debugging and documentation. The team should disclose this under the charter and personally understand the code, data, results and limitations. Do not claim manual authorship of every line or claim results from experiments that were not performed.
+
+
+Updated generation: choose a raw sample pool size. Every passed-filter peptide is scored, ranked, plotted and exported. Rank 1 is best. No accepted sequences are truncated.

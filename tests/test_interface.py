@@ -21,7 +21,10 @@ class InterfaceTests(unittest.TestCase):
         app.sidebar.radio[0].set_value('Generate & rank').run()
         app.button[0].click().run()
         self.assertFalse(app.exception)
-        self.assertGreater(len(app.session_state['generated'][0]), 0)
+        frame, audit = app.session_state['generated']
+        self.assertGreater(len(frame), 0)
+        self.assertEqual(len(frame), audit['passed_filters'])
+        self.assertEqual(frame['rank'].tolist(), list(range(1, len(frame)+1)))
 
 if __name__ == '__main__':
     unittest.main()

@@ -10,3 +10,6 @@
 - **[Supported Decision] Preserve the product ranking rule.** Alternative weight settings are sensitivity examples, not inferred historical weights or optimized clinical utility.
 - **[Supported Decision] Use CPU inference for the demonstration.** Existing installed dependencies and trained weights work without internet or GPU configuration.
 - **[Supported Decision] Preserve reproducibility artifacts.** Pin download revisions, hash source/data/model inputs, retain per-run outputs and archive existing production artifacts before deliberate retraining.
+
+
+Updated generation: choose a raw sample pool size. Every passed-filter peptide is scored, ranked, plotted and exported. Rank 1 is best. No accepted sequences are truncated.

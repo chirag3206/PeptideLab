@@ -30,3 +30,6 @@ Updated 17 November 2026. This supersedes implementation-status statements in th
 - Three-seed hyperparameter comparisons are exploratory; they do not establish optimal full-data settings.
 
 The application is a complete runnable computational demonstration with documented evaluations. The limits above are scientific claims it deliberately does not make.
+
+
+Updated generation: choose a raw sample pool size. Every passed-filter peptide is scored, ranked, plotted and exported. Rank 1 is best. No accepted sequences are truncated.

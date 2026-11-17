@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import pandas as pd
 import streamlit as st
+import altair as alt
 from peptide_lab.config import MODELS, RESULTS, ROOT
 from peptide_lab.features import parse_sequences
 from peptide_lab.dashboard import dataset_page, history_page, research_page, save_run, inspection
@@ -38,7 +39,7 @@ def hero(title, subtitle):
     st.markdown(f'<div class="hero"><div class="eyebrow">PEPTIDELAB / RESEARCH WORKSPACE</div><h1>{title}</h1><p>{subtitle}</p></div>', unsafe_allow_html=True)
 
 def table(frame):
-    preferred = ['sequence', 'priority_score', 'activity_score', 'activity_prediction', 'toxicity_score', 'toxicity_prediction', 'length', 'seen_in_grampa', 'seen_in_classifier_training']
+    preferred = ['rank', 'sequence', 'priority_score', 'activity_score', 'activity_prediction', 'toxicity_score', 'toxicity_prediction', 'length', 'seen_in_grampa', 'seen_in_classifier_training']
     st.dataframe(frame[[c for c in preferred if c in frame]], hide_index=True, use_container_width=True, column_config={
         'priority_score': st.column_config.ProgressColumn('Priority / 100', min_value=0, max_value=100, format='%.1f'),
         'activity_score': st.column_config.NumberColumn('Activity score ↑', format='%.3f'),
@@ -100,7 +101,8 @@ elif page == 'Generate & rank':
     hero('Explore new candidates.', 'Sample the VAE, apply sequence-quality filters, and screen the accepted candidates with both predictors.')
     with st.form('generate'):
         c1, c2, c3 = st.columns(3)
-        count = c1.slider('Candidates requested', 5, 100, 30, 5)
+        count = c1.slider('Raw sequences to sample', 100, 3000, 500, 100)
+        st.caption('Every passed-filter peptide is scored, ranked, plotted and exported.')
         temperature = c2.slider('Sampling temperature', .5, 1.3, .9, .05, help='Lower values favor common residues; higher values increase sampling diversity.')
         seed = c3.number_input('Random seed', 0, 999999, 42)
         lengths = st.slider('Accepted peptide length', 5, 60, (10, 40))
@@ -118,14 +120,23 @@ elif page == 'Generate & rank':
         frame, audit = st.session_state.generated
         cs = st.columns(3)
         cs[0].metric('Sampled', audit['sampled'])
-        cs[1].metric('Passed filters', audit['accepted_before_limit'])
-        cs[2].metric('Returned', len(frame))
-        if len(frame) < audit['requested']:
-            st.warning('The fixed sampling pool produced fewer eligible sequences than requested. Try a wider length range or another seed.')
+        cs[1].metric('Passed filters', audit['passed_filters'])
+        cs[2].metric('Ranked & exported', len(frame))
+        if frame.empty:
+            st.warning('No sequences passed the filters. Try a wider length range or another seed.')
         if not frame.empty:
             table(frame)
             st.subheader('Activity–toxicity trade-off')
-            st.scatter_chart(frame, x='toxicity_score', y='activity_score', color='priority_score', x_label='Toxicity score · lower preferred', y_label='Activity score · higher preferred')
+            chart = alt.Chart(frame).mark_circle(size=70, opacity=.7).encode(
+                x=alt.X('toxicity_score:Q', title='Toxicity score (lower preferred)', scale=alt.Scale(domain=[0,1])),
+                y=alt.Y('activity_score:Q', title='Activity score (higher preferred)', scale=alt.Scale(domain=[0,1])),
+                color=alt.Color('priority_score:Q', title='Priority / 100'),
+                tooltip=[alt.Tooltip('rank:Q', title='Rank', format='d'), 'sequence:N',
+                         alt.Tooltip('priority_score:Q', format='.3f'), alt.Tooltip('activity_score:Q', format='.4f'),
+                         alt.Tooltip('toxicity_score:Q', format='.4f'), 'length:Q']
+            ).interactive()
+            st.altair_chart(chart, use_container_width=True)
+            st.caption(f'All {len(frame)} passed-filter peptides are plotted. Hover to see rank and sequence. Points may overlap.')
         with st.expander('Sampling audit and filters'):
             st.json(audit)
             st.write('Reject truncated outputs, out-of-range lengths, very repetitive sequences, exact known sequences, and duplicates. Report quality on the unfiltered pool separately under Model results.')

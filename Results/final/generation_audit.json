@@ -1,8 +1,7 @@
 {
   "sampled": 750,
-  "accepted_before_limit": 637,
-  "requested": 50,
-  "returned": 50,
+  "passed_filters": 637,
+  "returned": 637,
   "rejected": {
     "length": 65,
     "truncated": 1,
@@ -16,5 +15,5 @@
     10,
     40
   ],
-  "selection": "First valid unique novel samples, then ranked by predictor scores. No laboratory validation."
+  "selection": "All passed-filter sequences scored and ranked together. No laboratory validation."
 }
