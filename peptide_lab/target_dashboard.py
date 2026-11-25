@@ -1,5 +1,6 @@
 """Target selection, measured benchmarks and batch screening."""
 import json
+import altair as alt
 import joblib
 import pandas as pd
 import streamlit as st
@@ -24,6 +25,26 @@ def target_result_table(result):
                      'observed_lower_MIC_label':st.column_config.NumberColumn('Measured lower MIC', help='1 means measured MIC at or below 10 µM. 0 means above 10 µM.')})
     code = result['target'].iloc[0]
     st.download_button('Download target results', result.to_csv(index=False), f'{code.replace(" ","_")}_screening.csv','text/csv')
+    st.subheader(f'{code} activity and toxicity')
+    tooltip = [
+        alt.Tooltip('sequence:N', title='Peptide'),
+        alt.Tooltip('rank:Q', title='Target rank', format='d'),
+        alt.Tooltip('general_rank:Q', title='General rank', format='d'),
+        alt.Tooltip('target_activity_score:Q', title=f'{code} activity', format='.3f'),
+        alt.Tooltip('general_activity_score:Q', title='General activity', format='.3f'),
+        alt.Tooltip('toxicity_score:Q', title='General toxicity', format='.3f'),
+        alt.Tooltip('priority_score:Q', title='Target priority / 100', format='.1f'),
+    ]
+    if 'observed_lower_MIC_label' in result:
+        tooltip.append(alt.Tooltip('observed_lower_MIC_label:Q', title='Measured lower MIC (1 = yes)', format='d'))
+    chart = alt.Chart(result).mark_circle(size=75, opacity=.75).encode(
+        x=alt.X('toxicity_score:Q', title='General toxicity score', scale=alt.Scale(domain=[0, 1])),
+        y=alt.Y('target_activity_score:Q', title=f'{code} activity score', scale=alt.Scale(domain=[0, 1])),
+        color=alt.Color('priority_score:Q', title='Target priority / 100', scale=alt.Scale(domain=[0, 100])),
+        tooltip=tooltip,
+    ).interactive()
+    st.altair_chart(chart, use_container_width=True)
+    st.caption(f'All {len(result)} peptides in the table are plotted. Hover for ranks and scores. Peptides with identical scores share a position.')
 
 def overall_results(targets):
     st.subheader('General predictors')
