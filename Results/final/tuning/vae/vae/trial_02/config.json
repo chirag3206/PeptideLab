@@ -1,0 +1,5 @@
+{
+  "latent": 32,
+  "lr": 0.001,
+  "word_dropout": 0.0
+}

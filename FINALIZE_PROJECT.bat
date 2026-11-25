@@ -18,6 +18,8 @@ python scripts/execute_walkthrough.py --notebook Notebooks/04_Dataset_Prediction
 if errorlevel 1 goto failed
 python scripts/execute_walkthrough.py --notebook Notebooks/05_Final_Alignment_and_ESM2.ipynb
 if errorlevel 1 goto failed
+python scripts/build_master_guide.py
+if errorlevel 1 goto failed
 python scripts/verify_project.py
 if errorlevel 1 goto failed
 echo Final evidence, reports and executed notebooks are updated. No production model was retrained.

@@ -6,7 +6,6 @@ Mean pooling excludes CLS, EOS and padding. No task labels enter the backbone.
 import json
 import hashlib
 import time
-from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
@@ -15,7 +14,7 @@ from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score
-from .config import ROOT, DATA, RESULTS, MODELS
+from .config import ROOT, DATA, RESULTS
 from .training import metrics, seed_everything
 
 BACKBONE = ROOT / 'Models/esm2_backbone'

@@ -1,0 +1,6 @@
+{
+  "qmap_url": "https://huggingface.co/datasets/anthol42/qmap_benchmark_2025/resolve/cf5ff24fd963f293ff4bc24e5933b411bec1bf33/dbaasp.json",
+  "qmap_sha256": "1f68ca0228f8deb3899af992cc8ff4729aff636e3d1af10dba19ba34227f404f",
+  "grampa_sha256": "9e33122afb3bdd169e8bed620b1040bf1601d60cf25b6c8c8d9870bf37522b6f",
+  "method": "Fixed GRAMPA test split for existing targets. Extra training sequences exclude every same-target GRAMPA sequence. Select training pool and model by inner validation AUC. Exact sequence split; related families can cross splits."
+}

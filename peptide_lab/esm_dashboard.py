@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 from .config import RESULTS, ROOT
 
-def esm_page(pipeline):
+def esm_page():
     paths=[RESULTS/f'esm2/{task}_metrics.json' for task in ['activity','toxicity']]
     if not all(p.exists() for p in paths):
         st.info('The ESM-2 embedding/classifier comparison is being prepared. The compact prediction engine remains available.')
@@ -12,8 +12,10 @@ def esm_page(pipeline):
     st.write('**Architecture:** frozen Meta ESM-2 (6 layers, 8M parameters) → mean of residue embeddings (320 features) → train-only scaling → 1D CNN → binary activity/toxicity score.')
     st.caption('CLS, EOS and padding are excluded from pooling. Heads are trained separately. This follows the pretrained-representation + CNN approach, with documented implementation differences from UniDL4BioPep.')
     rows=[]
+    reports = {}
     for task,path in zip(['activity','toxicity'],paths):
         esm=json.loads(path.read_text())
+        reports[task] = esm
         compact=json.loads((RESULTS/f'{task}_metrics.json').read_text())
         for name,values in [('Compact baseline',compact['test'][compact['selected_model']]),('ESM-2 + CNN',esm['test'])]:
             rows.append({'task':task,'model':name,**{k:v for k,v in values.items() if k!='confusion_matrix'}})
@@ -24,7 +26,7 @@ def esm_page(pipeline):
     for tab,task in zip(tabs[:2],['activity','toxicity']):
         with tab:
             st.line_chart(pd.read_csv(RESULTS/f'esm2/{task}_history.csv').set_index('epoch')[['validation_auc']])
-            report=json.loads((RESULTS/f'esm2/{task}_metrics.json').read_text())
+            report=reports[task]
             st.dataframe(pd.DataFrame(report['test']['confusion_matrix'],index=['Actual negative','Actual positive'],columns=['Predicted negative','Predicted positive']))
     with tabs[2]:
         st.json(json.loads((ROOT/'Models/esm2_backbone/source.json').read_text()))

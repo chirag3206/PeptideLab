@@ -2,7 +2,7 @@
 <style>body{font:16px/1.65 system-ui,sans-serif;color:#163247;background:#edf3f7;margin:0}main{max-width:1050px;margin:32px auto;background:white;padding:48px;border-radius:16px}h1{font-size:36px;line-height:1.15}h2{margin-top:40px;color:#10767b}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:9px;text-align:left;border-bottom:1px solid #dce6ec}th{background:#e5f2f1}img{max-width:100%;height:auto}.hero{background:#12364a;color:white;padding:30px;border-radius:12px}.note{background:#fff3dc;padding:18px;border-left:4px solid #bd8d28}code{background:#eef3f6;padding:3px}@media print{body{background:white}main{margin:0;padding:10px}h2,table,img{break-inside:avoid}.hero{color:#12364a;background:white}}</style></head><body><main>
 <div class="hero"><p>DSC4804 · STATISTICAL LEARNING · GROUP 4</p><h1>AI-Based Generation and Screening of Antimicrobial Peptides Using Deep Learning</h1><p>Chirag · Hurshvardhan Rao · Aniket Mishra</p></div>
 <h2>1. Abstract</h2><p>PeptideLab implements an end-to-end computational workflow for peptide generation, activity classification, toxicity classification and candidate ranking. An LSTM variational autoencoder learns from GRAMPA sequences. Independent compact CNN predictors and random-forest baselines learn from published UniDL4BioPep labels. A local Streamlit interface provides reproducible sampling, user-input screening, evaluation views and CSV export. All results below are computed from saved evaluation artifacts, not copied from research papers.</p>
-<h2>2. Problem and scope</h2><p>The objective is to reduce a large sequence search space to a computational shortlist. This implementation predicts binary antimicrobial-class membership and a benchmark toxicity label; it does not predict MIC, organism-specific potency or comprehensive safety. Candidate predictions require future experimental investigation.</p>
+<h2>2. Problem and scope</h2><p>The objective is to reduce a large sequence search space to a computational shortlist. The general predictors estimate antimicrobial-class membership and the benchmark toxicity label. A separate model for each evaluated organism classifies MIC at a 10 micromolar cutoff. The toxicity label covers the supplied benchmark. Candidate predictions require future experimental investigation.</p>
 <h2>3. Data and preprocessing</h2><p>GRAMPA contains 51,345 experimental records and the supplied cleaned file contains 6,760 unique sequences. The final VAE uses 6,510 canonical sequences of length 5–60: 5208 training, 651 validation and 651 test sequences. Classifiers use canonical sequences of length 5–200. Published classifier test splits are retained. Conflicting-label sequences and exact duplicates are removed; any exact train/test overlap is removed from training. Twenty percent of the remaining training set is reserved for validation. Scaling is fitted only on training data.</p>
 <table class="dataframe">
   <thead>
@@ -685,11 +685,16 @@ Both tasks&#x27; validation AUC favors the compact models, so the compact engine
 
 ## Measured results
 
-task,model,validation_auc,accuracy,precision,recall,f1,roc_auc,mcc
-activity,Compact ensemble,0.994395,0.961924,0.945892,0.920796,0.933175,0.991557,0.90672
-activity,ESM-2 + CNN,0.992945,0.951786,0.883028,0.960203,0.92,0.990339,0.887174
-toxicity,Compact cnn,0.968533,0.922414,0.9375,0.892193,0.914286,0.971802,0.844362
-toxicity,ESM-2 + CNN,0.957356,0.898276,0.883212,0.899628,0.891344,0.966877,0.795855
+task,model,validation_auc,accuracy,precision,recall,f1,roc_auc,mcc
+
+activity,Compact ensemble,0.994395,0.961924,0.945892,0.920796,0.933175,0.991557,0.90672
+
+activity,ESM-2 + CNN,0.992945,0.951786,0.883028,0.960203,0.92,0.990339,0.887174
+
+toxicity,Compact cnn,0.968533,0.922414,0.9375,0.892193,0.914286,0.971802,0.844362
+
+toxicity,ESM-2 + CNN,0.957356,0.898276,0.883212,0.899628,0.891344,0.966877,0.795855
+
 
 The saved demonstration samples 750 sequences, retains 637 after sequence filters and flags 436 as passing the additional property screen. All 637 sequence-filter survivors receive ranks and remain in plots and CSVs. High scores and passing flags are model outputs, not confirmed active/non-toxic peptides.
 
@@ -718,4 +723,169 @@ Install requirements-lock.txt and run RUN_PROJECT.bat (or python -m streamlit ru
 For ESM retraining: python -m peptide_lab.esm_predictor. For cutoff regeneration: python -m peptide_lab.screening_thresholds. For similarity/composition evidence: python -m peptide_lab.alignment_checks. Run python scripts/verify_project.py for software checks. The supplied weights already work; retraining is optional. Rebuild reports after any model changes. See FINALIZE_PROJECT.bat for the ordered evidence/report workflow without retraining production weights.
 
 Start your explanation with: &quot;We learn sequence patterns using a VAE, score generated or existing peptides using two independent supervised tasks, and prioritize candidates for further investigation. We validate software and benchmark performance, not biological efficacy.&quot;
-</pre></main></body></html>
+</pre><!-- TARGET_SCREENING --><h2>19. Organism-specific evaluation</h2><p>The general activity and toxicity benchmarks answer separate questions. For each evaluated organism, the specialised model classifies whether the measured MIC was at or below 10 µM. The baseline and selected model were evaluated on the same held-out peptides for that organism.</p><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Organism</th>
+      <th>Test peptides</th>
+      <th>Baseline accuracy</th>
+      <th>Selected accuracy</th>
+      <th>Baseline ROC-AUC</th>
+      <th>Selected ROC-AUC</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>E. coli</td>
+      <td>697</td>
+      <td>0.699</td>
+      <td>0.763</td>
+      <td>0.742</td>
+      <td>0.848</td>
+    </tr>
+    <tr>
+      <td>S. aureus</td>
+      <td>589</td>
+      <td>0.686</td>
+      <td>0.732</td>
+      <td>0.720</td>
+      <td>0.807</td>
+    </tr>
+    <tr>
+      <td>P. aeruginosa</td>
+      <td>312</td>
+      <td>0.696</td>
+      <td>0.721</td>
+      <td>0.762</td>
+      <td>0.773</td>
+    </tr>
+    <tr>
+      <td>K. pneumoniae</td>
+      <td>110</td>
+      <td>0.782</td>
+      <td>0.809</td>
+      <td>0.834</td>
+      <td>0.867</td>
+    </tr>
+    <tr>
+      <td>C. albicans</td>
+      <td>232</td>
+      <td>0.612</td>
+      <td>0.746</td>
+      <td>0.613</td>
+      <td>0.796</td>
+    </tr>
+    <tr>
+      <td>B. subtilis</td>
+      <td>203</td>
+      <td>0.773</td>
+      <td>0.768</td>
+      <td>0.824</td>
+      <td>0.847</td>
+    </tr>
+    <tr>
+      <td>S. epidermidis</td>
+      <td>121</td>
+      <td>0.694</td>
+      <td>0.744</td>
+      <td>0.750</td>
+      <td>0.836</td>
+    </tr>
+    <tr>
+      <td>E. faecalis</td>
+      <td>104</td>
+      <td>0.635</td>
+      <td>0.673</td>
+      <td>0.704</td>
+      <td>0.769</td>
+    </tr>
+  </tbody>
+</table><p>Giving each of the 8 evaluated organisms equal weight, mean selected accuracy was 74.5% and mean ROC-AUC was 0.818. TB and SARS-CoV-2 have evidence summaries and no test scores. Related sequences can occur across splits.</p><h2>20. Hyperparameter tuning</h2><p>Trial 0 is the default. Validation ROC-AUC selected classifier settings. Each ensemble averages its CNN and forest scores. The table compares default and selected configurations on the held-out test split. The dashboard’s compact predictor uses its original deployed checkpoint.</p><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Task</th>
+      <th>Model</th>
+      <th>Selected trial</th>
+      <th>Default accuracy</th>
+      <th>Selected accuracy</th>
+      <th>Default ROC-AUC</th>
+      <th>Selected ROC-AUC</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Activity</td>
+      <td>CNN</td>
+      <td>0</td>
+      <td>0.9554</td>
+      <td>0.9554</td>
+      <td>0.9882</td>
+      <td>0.9882</td>
+    </tr>
+    <tr>
+      <td>Activity</td>
+      <td>Random forest</td>
+      <td>1</td>
+      <td>0.9589</td>
+      <td>0.9571</td>
+      <td>0.9905</td>
+      <td>0.9906</td>
+    </tr>
+    <tr>
+      <td>Activity</td>
+      <td>Ensemble</td>
+      <td>Selected CNN + forest</td>
+      <td>0.9619</td>
+      <td>0.9618</td>
+      <td>0.9916</td>
+      <td>0.9916</td>
+    </tr>
+    <tr>
+      <td>Toxicity</td>
+      <td>CNN</td>
+      <td>0</td>
+      <td>0.9224</td>
+      <td>0.9224</td>
+      <td>0.9718</td>
+      <td>0.9718</td>
+    </tr>
+    <tr>
+      <td>Toxicity</td>
+      <td>Random forest</td>
+      <td>1</td>
+      <td>0.9086</td>
+      <td>0.9052</td>
+      <td>0.9617</td>
+      <td>0.9630</td>
+    </tr>
+    <tr>
+      <td>Toxicity</td>
+      <td>Ensemble</td>
+      <td>Selected CNN + forest</td>
+      <td>0.9207</td>
+      <td>0.9207</td>
+      <td>0.9719</td>
+      <td>0.9723</td>
+    </tr>
+  </tbody>
+</table><p>VAE trial 1 had the lowest validation objective. Its test results follow. Token accuracy measures correctly predicted residues.</p><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>VAE test metric</th>
+      <th>Default</th>
+      <th>Selected</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>token_accuracy</td>
+      <td>0.4895</td>
+      <td>0.5312</td>
+    </tr>
+    <tr>
+      <td>objective</td>
+      <td>1.8948</td>
+      <td>1.8499</td>
+    </tr>
+  </tbody>
+</table><p><a href="../Results/final/tuning/trials.csv">All validation trials and settings</a></p></main></body></html>

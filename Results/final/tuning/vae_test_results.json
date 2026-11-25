@@ -1,0 +1,20 @@
+{
+  "Before": {
+    "reconstruction": 1.6697235898725669,
+    "kl": 11.254073850570187,
+    "token_accuracy": 0.48951866189467536,
+    "objective": 1.8948050668839707,
+    "uniqueness": 1.0,
+    "exact_novelty": 1.0,
+    "natural_end_rate": 1.0
+  },
+  "After": {
+    "reconstruction": 1.5812199117320458,
+    "kl": 13.4345462640859,
+    "token_accuracy": 0.5312248922649916,
+    "objective": 1.8499108370137638,
+    "uniqueness": 1.0,
+    "exact_novelty": 0.998,
+    "natural_end_rate": 0.998
+  }
+}

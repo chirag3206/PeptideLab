@@ -1,6 +1,6 @@
 """Dataset browsing with explicit labels and per-model split membership."""
 import pandas as pd
-from .config import DATA, RESULTS, AA
+from .config import DATA, AA
 
 SOURCES = ['GRAMPA', 'Activity benchmark', 'Toxicity benchmark']
 
@@ -58,12 +58,3 @@ def attach_labels(predictions, selected):
         out.loc[observed, task + '_matches_label'] = (out.loc[observed, task + '_score'].ge(.5).astype(int).to_numpy() == out.loc[observed, column].astype(int).to_numpy())
     return out
 
-def score_catalog(pipeline):
-    frame = catalog()
-    chunks = []
-    for start in range(0, len(frame), 500):
-        selected = frame.iloc[start:start+500]
-        chunks.append(attach_labels(pipeline.predict(selected.sequence.tolist()), selected))
-    scored = pd.concat(chunks, ignore_index=True)
-    scored.to_csv(RESULTS / 'dataset_predictions.csv', index=False)
-    return scored

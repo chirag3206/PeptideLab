@@ -1,10 +1,12 @@
 # PeptideLab
 
+**New to the project? Open the [Master Project Guide](Documentation/MASTER_PROJECT_GUIDE.html)** in a browser. It covers the complete project in simple language with diagrams, worked examples, dashboard instructions and viva questions. Use its Print / Save as PDF button for a printable copy.
+
 ### AI-Based Antimicrobial Peptide Generation and Screening
 
 PeptideLab is an end-to-end research application that generates peptide sequences, predicts antimicrobial activity and toxicity, and ranks candidates through an interactive Streamlit dashboard.
 
-Built for **DSC4804 ? Statistical Learning**, the project combines an LSTM variational autoencoder, sequence classifiers, interpretable baselines, reproducible evaluation, and an interface designed for exploration and classroom demonstrations.
+Built for **DSC4804 Statistical Learning**, the project combines an LSTM variational autoencoder, sequence classifiers, interpretable baselines, reproducible evaluation, and an interface designed for exploration and classroom demonstrations.
 
 > Research prototype: predictions are computational estimates. They do not establish experimental antimicrobial efficacy or biological safety.
 
@@ -16,7 +18,19 @@ Read [Final alignment and team guide](Documentation/FINAL_ALIGNMENT_AND_TEAM_GUI
 
 Sequence filtering and validation-selected property screening are separate. Every sequence-filter survivor remains ranked, plotted and exported, with its property-screen flag. Both product and weighted-difference ranking are available. New evidence includes sequence-similarity overlap, amino-acid composition and total VAE loss.
 
+**Start learning here:** [Complete master project guide](Documentation/MASTER_PROJECT_GUIDE.md) for simple definitions, diagrams, formulas, worked examples, dashboard steps, and viva preparation.
+
 ## Features
+
+### Demonstrate general and organism-specific screening
+
+1. Launch `RUN_PROJECT.bat` and open **Target-specific screening → Screen one organism**.
+2. Choose *Escherichia coli*, keep **Dataset peptides** selected, and click **Screen for selected target**. Each row shows general activity, general toxicity, the E. coli activity score, and its measured lower-MIC label. A measured label of 1 means the recorded minimum inhibitory concentration was at or below 10 µM. General rank and target rank compare the same batch.
+3. Open **Evidence for this target** for the baseline and selected model on the same test peptides. Choose **Overall results** to see the general compact predictors, all target models, the average across evaluated organisms, and a downloadable comparison. **Run a general prediction** opens standalone screening.
+
+Eight organisms have evaluated models. TB and SARS-CoV-2 have evidence summaries. To reproduce the organism benchmarks using the included data, run `python -m peptide_lab.targets`. The [test comparisons](Results/final/target_benchmark/comparison.csv) and [validation trials](Results/final/target_benchmark/validation_trials.csv) contain the evaluation results.
+
+### Other dashboard features
 
 - **Generate and rank:** sample peptide candidates from a trained VAE, apply sequence-quality filters, predict activity and toxicity, and export a ranked shortlist.
 - **Dataset explorer:** browse GRAMPA and labeled activity/toxicity benchmarks; filter by length, sequence fragment, label, and dataset split; predict selected peptides or seeded random batches.
@@ -50,7 +64,7 @@ Activity and toxicity predictors learn from separate labeled benchmark datasets.
 
 ### Requirements
 
-- Python 3.11?3.13; the recorded run used Python 3.13.7.
+- Python 3.11 to 3.13; the recorded run used Python 3.13.7.
 - A CPU is sufficient; a GPU is optional and is not required by the delivered application.
 - Internet access for dependency installation. Once installed, the included data and models support offline inference.
 
@@ -103,7 +117,7 @@ Use **Activity benchmark** to compare activity labels, **GRAMPA** to explore kno
 The ranking rule is:
 
 ```text
-priority_score = 100 ? activity_score ? (1 ? toxicity_score)
+priority_score = 100 * activity_score * (1 - toxicity_score)
 ```
 
 Higher priority favors higher activity scores and lower toxicity scores. This is a transparent preference rule, not a calibrated probability of success.
@@ -212,7 +226,7 @@ The downloader reuses the manifest's pinned revision. Changing it requires an ex
 
 ## Documentation
 
-- [Complete project report](Documentation/COMPLETE_PROJECT_REPORT.html) ? self-contained HTML with embedded figures; download and open in a browser.
+- [Complete project report](Documentation/COMPLETE_PROJECT_REPORT.html) in self-contained HTML with embedded figures; download and open in a browser.
 - [Demo and viva guide](Documentation/DEMO_AND_VIVA.md)
 - [Project walkthrough notebook](Notebooks/03_Final_Project_Walkthrough.ipynb)
 - [Dataset prediction and research notebook](Notebooks/04_Dataset_Prediction_and_Research.ipynb)
@@ -224,7 +238,7 @@ The downloader reuses the manifest's pinned revision. Changing it requires an ex
 
 ## Limitations
 
-- Activity prediction estimates binary antimicrobial-class membership; it does not predict MIC or species-specific susceptibility.
+- General activity estimates membership in the antimicrobial class. The organism-specific models classify MIC at a 10 µM cutoff. Their held-out results measure performance on distinct sequences, and related peptide families can occur in both training and testing.
 - Toxicity predictions refer to the supplied dataset's label. The spreadsheets do not establish a comprehensive dose-, tissue-, or assay-specific safety endpoint.
 - Scores are uncalibrated model outputs. A high priority score does not establish efficacy or safety.
 - Activity labels have a substantial length imbalance: a length-only baseline reaches approximately 0.967 ROC-AUC. The short activity test subset has only eight negatives, making its raw accuracy misleading.

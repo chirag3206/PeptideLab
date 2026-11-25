@@ -1,6 +1,5 @@
 """Run: python -m streamlit run app.py"""
 import json
-from pathlib import Path
 import pandas as pd
 import streamlit as st
 import altair as alt
@@ -17,23 +16,19 @@ h1,h2,h3 {color:#102d42; letter-spacing:-.025em;}
 [data-testid="stMetric"] {background:white; border:1px solid #dce6ed; border-radius:12px; padding:16px;}
 .hero {background:linear-gradient(120deg,#102d42,#176b77);padding:28px 32px;border-radius:18px;color:white;margin-bottom:24px;}
 .hero h1 {color:white;margin:0;font-size:2.3rem;}.hero p {color:#d1e8ea;margin-bottom:0;}
-.eyebrow {font-size:12px;letter-spacing:2px;font-weight:700;color:#89d6c7;}
 .stButton > button[kind="primary"] {background:#147d83;border:0;}
 </style>''', unsafe_allow_html=True)
 st.sidebar.title('🧬 PeptideLab')
 st.sidebar.caption('STATISTICAL LEARNING · GROUP 4')
-page = st.sidebar.radio('Workspace', ['Overview', 'Dataset explorer', 'Generate & rank', 'Screen sequences', 'Prediction history', 'Model results', 'Research checks', 'ESM-2 comparison', 'Learn the project'])
+page = st.sidebar.radio('Workspace', ['Overview', 'Dataset explorer', 'Target-specific screening', 'Generate & rank', 'Screen sequences', 'Prediction history', 'Model results', 'Research checks', 'ESM-2 comparison', 'Learn the project'], key='workspace')
 st.sidebar.divider()
 esm_ready = all((ROOT / f'Models/esm2_heads/{task}.pt').exists() for task in ['activity','toxicity'])
 if esm_ready:
     st.sidebar.selectbox('Prediction engine', ['Compact baseline (fast)', 'ESM-2 + CNN'], key='prediction_engine_choice', help='Applies to new dataset, custom and generation predictions. Saved history retains its original engine.')
-    st.sidebar.caption('Model results shows the compact benchmark. ESM-2 comparison shows the pretrained model evaluation.')
 
-st.sidebar.caption('Local inference · CPU ready\n\nVAE generation + activity and toxicity screening')
 st.sidebar.selectbox('Ranking rule', ['Product', 'Weighted difference'], key='rank_rule')
 if st.session_state.rank_rule == 'Weighted difference':
     st.sidebar.slider('Activity weight', 0.0, 1.0, .5, .05, key='rank_weight')
-st.sidebar.caption('Choose preferences before running predictions. Existing results retain their original settings.')
 st.sidebar.info('Research predictions only. Scores do not establish experimental activity or safety.')
 
 def read_json(name):
@@ -48,7 +43,7 @@ def pipeline():
     return load_pipeline('esm2' if st.session_state.get('prediction_engine_choice') == 'ESM-2 + CNN' else 'compact', 'weighted_difference' if st.session_state.get('rank_rule') == 'Weighted difference' else 'product', st.session_state.get('rank_weight', .5))
 
 def hero(title, subtitle):
-    st.markdown(f'<div class="hero"><div class="eyebrow">PEPTIDELAB / RESEARCH WORKSPACE</div><h1>{title}</h1><p>{subtitle}</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="hero"><h1>{title}</h1><p>{subtitle}</p></div>', unsafe_allow_html=True)
 
 def table(frame):
     preferred = ['rank', 'sequence', 'priority_score', 'activity_score', 'activity_prediction', 'toxicity_score', 'toxicity_prediction', 'passes_property_screen', 'length', 'seen_in_grampa', 'seen_in_classifier_training']
@@ -64,7 +59,6 @@ def table(frame):
         st.write('Activity score: support for the antimicrobial class. Toxicity score: support for the toxic class. Both are model scores, not calibrated probabilities. Classification threshold = 0.5.')
         st.write('Product: 100*A*(1-T). Weighted difference: w*A-(1-w)*T, shifted by (1-w) and multiplied by 100 for display; sorting is unchanged. The CSV records the rule and weight.')
         st.write('Property screen: activity above its validation-selected cutoff AND toxicity below its validation-selected cutoff. All sequence-filter survivors remain ranked and exported, including property-screen failures. This flag is not experimental validation.')
-        st.code('baseline priority = 100 × activity_score × (1 − toxicity_score)', language=None)
         st.write('Priority is a transparent ranking rule, not a probability of clinical success. Novelty checks exact matches only. A sequence can resemble a known peptide without being an exact match.')
         st.write('The complete CSV includes model disagreement and simple sequence descriptors. Charge is K + R − D − E, an approximate descriptor rather than a pH-dependent charge calculation.')
 
@@ -75,31 +69,28 @@ if not ready:
     st.stop()
 
 if page == 'Overview':
-    hero('From sequences to a shortlist.', 'Generate peptide candidates, screen two biological properties, and explore the evidence behind every result.')
+    hero('PeptideLab', 'Explore general antimicrobial activity and toxicity, then compare the prediction for a particular organism.')
     a, t, v = read_json('activity_metrics.json'), read_json('toxicity_metrics.json'), read_json('vae_metrics.json')
     cols = st.columns(4)
-    cols[0].metric('GRAMPA sequences', '6,760')
+    cols[0].metric('GRAMPA sequences', f"{read_json('preprocessing_audit.json')['canonical_unique_sequences']:,}")
     cols[1].metric('Activity · test ROC-AUC', f'{a["test"][a["selected_model"]]["roc_auc"]:.3f}')
     cols[2].metric('Toxicity · test ROC-AUC', f'{t["test"][t["selected_model"]]["roc_auc"]:.3f}')
     cols[3].metric('VAE training sequences', f'{v["splits"]["train"]:,}')
-    st.subheader('One connected workflow')
-    cols = st.columns(4)
-    for col, title, desc in zip(cols, ['01 · Generate', '02 · Predict activity', '03 · Predict toxicity', '04 · Rank & export'], ['An LSTM VAE learns patterns in GRAMPA and samples new sequences.', 'A trained classifier scores membership in the antimicrobial class.', 'A separate classifier estimates membership in the toxic class.', 'A clear scoring rule creates a downloadable shortlist.']):
-        with col:
-            st.markdown('**' + title + '**')
-            st.write(desc)
     st.divider()
-    left, right = st.columns([1.5, 1])
+    left, right = st.columns(2)
     with left:
-        st.subheader('Ready for the demonstration')
-        st.write('Use **Dataset explorer** to predict existing peptides and compare known labels, **Generate & rank** to create candidates, or **Screen sequences** for your own input. Revisit runs under **Prediction history**. Open **Model results** for held-out metrics and **Learn the project** for the viva explanation.')
-        if (RESULTS / 'ranked_candidates.csv').exists():
-            st.caption('Saved reproducible demonstration run · seed 42')
-            table(pd.read_csv(RESULTS / 'ranked_candidates.csv').head(5))
+        st.subheader('Organism-specific screening')
+        st.write('Compare general activity, toxicity and the selected organism’s MIC group for each peptide. Choose **Overall results** for test scores and data coverage.')
+        st.button('Open target-specific screening', on_click=st.session_state.update, args=({'workspace':'Target-specific screening'},))
     with right:
-        st.subheader('What this project claims')
-        st.write('A working computational prototype with reproducible training, held-out evaluation, and candidate prioritization.')
-        st.write('Activity is binary classification, not species-specific MIC prediction. Toxicity is a benchmark label, not a comprehensive safety assessment. Similar sequences may occur across dataset splits.')
+        st.subheader('General screening')
+        st.write('Use your own sequences, select measured peptides in **Dataset explorer**, or sample candidates in **Generate & rank**.')
+        st.button('Screen your sequences', on_click=st.session_state.update, args=({'workspace':'Screen sequences'},))
+
+elif page == 'Target-specific screening':
+    st.title('Target-specific screening')
+    from peptide_lab.target_dashboard import target_page
+    target_page(pipeline)
 
 elif page == 'Dataset explorer':
     hero('Predict directly from the data.', 'Browse known peptides, run both predictors, and compare scores with available benchmark labels.')
@@ -112,7 +103,7 @@ elif page == 'Prediction history':
 elif page == 'ESM-2 comparison':
     hero('Pretrained protein representations.', 'Compare ESM-2 plus CNN with the compact baseline on the same saved splits.')
     from peptide_lab.esm_dashboard import esm_page
-    esm_page(pipeline)
+    esm_page()
 
 elif page == 'Research checks':
     hero('Inspect the research evidence.', 'Reproducible preprocessing, latent diagnostics, baseline checks, and ranking sensitivity.')
@@ -136,6 +127,7 @@ elif page == 'Generate & rank':
                 if not generated_frame.empty:
                     save_run("Generated candidates", generated_frame, generated_audit)
             except (ValueError, OSError, RuntimeError) as exc:
+                st.session_state.pop('generated', None)
                 st.error(str(exc))
     if 'generated' in st.session_state:
         frame, audit = st.session_state.generated
@@ -147,7 +139,7 @@ elif page == 'Generate & rank':
             st.caption(f"Passed validation-selected property screen: {audit['passed_property_screen']} of {len(frame)}. All sequence-filter survivors remain available below.")
         if frame.empty:
             st.warning('No sequences passed the filters. Try a wider length range or another seed.')
-        if not frame.empty:
+        else:
             table(frame)
             st.subheader('Activity–toxicity trade-off')
             chart = alt.Chart(frame).mark_circle(size=70, opacity=.7).encode(
@@ -163,8 +155,6 @@ elif page == 'Generate & rank':
         with st.expander('Sampling audit and filters'):
             st.json(audit)
             st.write('Reject truncated outputs, out-of-range lengths, very repetitive sequences, exact known sequences, and duplicates. Report quality on the unfiltered pool separately under Model results.')
-    else:
-        st.info('Choose settings and run the complete generation → activity → toxicity → ranking pipeline.')
 
 elif page == 'Screen sequences':
     hero('Inspect your sequences.', 'Paste amino-acid sequences or FASTA text. Download scores, predictions, and sequence descriptors.')
@@ -197,50 +187,56 @@ elif page == 'Screen sequences':
         frame = st.session_state.screened
         table(frame)
         inspection(frame, 'custom_inspection')
-        with st.expander('Sequence descriptors and model disagreement'):
-            st.dataframe(frame, hide_index=True, use_container_width=True)
 
 elif page == 'Model results':
-    hero('Evidence, not just outputs.', 'Held-out test results, baseline comparisons, training curves, and explicit limitations.')
+    hero('Model results', 'Compare held-out test scores, training curves and hyperparameter trials.')
     tabs = st.tabs(['Activity predictor', 'Toxicity predictor', 'VAE generator', 'Data provenance'])
     for tab, task in zip(tabs[:2], ['activity', 'toxicity']):
         with tab:
-            report = read_json(task + '_metrics.json')
-            st.write(f'**Selected model:** {report["selected_model"]} · chosen by validation ROC-AUC · threshold 0.5')
-            rows = [{"model": name, **{k: v for k, v in values.items() if k != 'confusion_matrix'}} for name, values in report['test'].items()]
-            st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
-            c1, c2 = st.columns(2)
-            with c1:
-                st.markdown('**Training / validation**')
-                history = pd.read_csv(RESULTS / f'{task}_history.csv').set_index('epoch')
-                st.line_chart(history[['validation_auc']])
-                st.caption('Validation ROC-AUC across epochs; best checkpoint retained.')
-            with c2:
-                st.markdown('**Test confusion matrix**')
-                matrix = report['test'][report['selected_model']]['confusion_matrix']
-                st.dataframe(pd.DataFrame(matrix, index=['Actual negative', 'Actual positive'], columns=['Predicted negative', 'Predicted positive']))
-                st.caption('Positive means antimicrobial for activity; toxic for toxicity.')
-            st.markdown('**Interpretable baseline · feature importance**')
-            importance = pd.read_csv(RESULTS / f'{task}_feature_importance.csv').head(10).set_index('feature')
-            st.bar_chart(importance)
-            st.caption('Random-forest impurity importance; descriptive association, not a causal explanation.')
-            st.info(report['limitations'])
-            with st.expander('Dataset audit / split counts'):
-                st.json(read_json(task + '_data_audit.json'))
+            view = st.radio('Results view', ['Baseline results', 'Hyperparameter tuning'], horizontal=True, key='results_view_'+task)
+            if view == 'Hyperparameter tuning':
+                from peptide_lab.tuning_dashboard import tuning_page
+                tuning_page(task)
+            else:
+                report = read_json(task + '_metrics.json')
+                st.write(f'**Selected model:** {report["selected_model"]} · chosen by validation ROC-AUC · threshold 0.5')
+                rows = [{"model": name, **{k: v for k, v in values.items() if k != 'confusion_matrix'}} for name, values in report['test'].items()]
+                st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.markdown('**Training / validation**')
+                    history = pd.read_csv(RESULTS / f'{task}_history.csv').set_index('epoch')
+                    st.line_chart(history[['validation_auc']])
+                    st.caption('Validation ROC-AUC across epochs; best checkpoint retained.')
+                with c2:
+                    st.markdown('**Test confusion matrix**')
+                    matrix = report['test'][report['selected_model']]['confusion_matrix']
+                    st.dataframe(pd.DataFrame(matrix, index=['Actual negative', 'Actual positive'], columns=['Predicted negative', 'Predicted positive']))
+                    st.caption('Positive means antimicrobial for activity; toxic for toxicity.')
+                st.markdown('**Interpretable baseline · feature importance**')
+                importance = pd.read_csv(RESULTS / f'{task}_feature_importance.csv').head(10).set_index('feature')
+                st.bar_chart(importance)
+                st.caption('Random-forest impurity importance; descriptive association, not a causal explanation.')
+                st.info(report['limitations'])
+                with st.expander('Dataset audit / split counts'):
+                    st.json(read_json(task + '_data_audit.json'))
     with tabs[2]:
-        report = read_json('vae_metrics.json')
-        cols = st.columns(3)
-        cols[0].metric('Unique samples / 500', report['unique'])
-        cols[1].metric('Exact novelty vs GRAMPA', f'{report["novel_unique_vs_grampa"]:.1%}')
-        cols[2].metric('Natural END rate', f'{report["natural_end_rate"]:.1%}')
-        history = pd.read_csv(RESULTS / 'vae_history.csv').set_index('epoch')
-        st.line_chart(history[['train_reconstruction', 'validation_reconstruction']])
-        st.caption('Cross-entropy per non-padding token. Lower is better; training includes word dropout and sampled latent vectors, validation uses the latent mean.')
-        st.write(f'Test teacher-forced token accuracy: **{report["test_teacher_forced_token_accuracy"]:.1%}**. This is not whole-peptide reconstruction accuracy.')
-        st.info(report['notes'])
-        st.dataframe(pd.read_csv(RESULTS / 'vae_raw_generation.csv').head(20), hide_index=True)
-        with st.expander('Complete VAE metrics'):
-            st.json(report)
+        view = st.radio('Results view', ['Baseline results', 'Hyperparameter tuning'], horizontal=True, key='results_view_vae')
+        if view == 'Hyperparameter tuning':
+            from peptide_lab.tuning_dashboard import tuning_page
+            tuning_page('vae')
+        else:
+            report = read_json('vae_metrics.json')
+            cols = st.columns(3)
+            cols[0].metric('Unique samples / 500', report['unique'])
+            cols[1].metric('Exact novelty vs GRAMPA', f'{report["novel_unique_vs_grampa"]:.1%}')
+            cols[2].metric('Natural END rate', f'{report["natural_end_rate"]:.1%}')
+            history = pd.read_csv(RESULTS / 'vae_history.csv').set_index('epoch')
+            st.line_chart(history[['train_reconstruction', 'validation_reconstruction']])
+            st.caption('Cross-entropy per non-padding token. Lower is better; training includes word dropout and sampled latent vectors, validation uses the latent mean.')
+            st.write(f'Test teacher-forced token accuracy: **{report["test_teacher_forced_token_accuracy"]:.1%}**. This is not whole-peptide reconstruction accuracy.')
+            st.info(report['notes'])
+            st.dataframe(pd.read_csv(RESULTS / 'vae_raw_generation.csv').head(20), hide_index=True)
     with tabs[3]:
         st.write('GRAMPA supplies the generator sequences. Published UniDL4BioPep activity and toxicity datasets supply the classifier labels. External files are pinned to a Git commit with SHA-256 checksums.')
         st.markdown('[GRAMPA source](https://github.com/zswitten/Antimicrobial-Peptides) · [UniDL4BioPep source](https://github.com/dzjxzyd/UniDL4BioPep)')
@@ -258,12 +254,9 @@ else:
         '6. What do the metrics mean?': 'Precision: how many predicted positives are correct. Recall: how many actual positives are found. F1 balances both. ROC-AUC measures ordering of positives vs negatives across thresholds. MCC measures classification agreement while accounting for all four confusion-matrix cells.',
         '7. How do we rank candidates?': 'Priority = 100 × activity score × (1 − toxicity score). A candidate needs both a high activity score and a low toxicity score to rank highly. This is a decision rule, not proof that it works or is safe.',
         '8. How is this different from UniDL4BioPep?': 'We use its published benchmark data, not its reported results or pretrained weights. Our compact CNN learns residue embeddings directly and adds interpretable features; a separate frozen ESM-2 plus CNN engine is also available. Both are adaptations, not exact paper reproductions.',
-        '9. What are the limitations?': 'No laboratory experiments; no MIC or bacterial-species prediction; toxicity labels are dataset-specific; similarity leakage and length bias remain possible; classifier scores are not calibrated; sequence novelty is exact-match novelty only.',
+        '9. How does organism-specific screening work?': 'Choose an organism to see whether its model predicts a measured MIC at or below 10 µM. Compare that score to general antimicrobial activity and toxicity in the same row. Overall results gives each evaluated organism equal weight in the reported average.',
+        '10. What are the limitations?': 'Scores are computational estimates. The organism models classify MIC into two groups. Toxicity labels are dataset-specific, and related sequences or differences in length may affect test results. Novelty checks compare exact sequence matches.',
     }
     for title, body in explanations.items():
         with st.expander(title, expanded=title.startswith('1.')):
             st.write(body)
-    st.subheader('Three-person presentation split')
-    st.write('**Chirag:** data, VAE, and generation. **Hurshvardhan:** activity/toxicity classifiers and evaluation. **Aniket:** quality filters, ranking, interface, and interpretation.')
-    st.subheader('Reproduce the complete project')
-    st.code('python -m peptide_lab.training\npython -m peptide_lab.pipeline\npython -m unittest discover -s tests -v\npython -m streamlit run app.py', language='bash')

@@ -1,0 +1,21 @@
+{
+  "task": "activity",
+  "family": "cnn",
+  "trial": 1,
+  "role": "candidate",
+  "config": {
+    "lr": 0.001,
+    "filters": 16,
+    "dropout": 0.2
+  },
+  "best_epoch": 8,
+  "seconds": 28.21340219990816,
+  "seed": 42,
+  "validation_accuracy": 0.9565217391304348,
+  "validation_precision": 0.901840490797546,
+  "validation_recall": 0.953307392996109,
+  "validation_f1": 0.926860025220681,
+  "validation_mcc": 0.8966590349720633,
+  "validation_roc_auc": 0.992969990844989,
+  "validation_average_precision": 0.9832093143322496
+}

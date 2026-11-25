@@ -3,7 +3,7 @@ import json
 import unittest
 import numpy as np
 import pandas as pd
-from peptide_lab.config import DATA, MODELS, RESULTS
+from peptide_lab.config import DATA, RESULTS
 from peptide_lab.features import validate, parse_sequences, properties
 
 class InputTests(unittest.TestCase):

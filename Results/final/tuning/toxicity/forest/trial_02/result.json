@@ -1,0 +1,21 @@
+{
+  "task": "toxicity",
+  "family": "forest",
+  "trial": 2,
+  "role": "candidate",
+  "config": {
+    "n_estimators": 240,
+    "max_depth": null,
+    "min_samples_leaf": 4
+  },
+  "best_epoch": null,
+  "seconds": 1.1233406000537798,
+  "seed": 42,
+  "validation_accuracy": 0.8904109589041096,
+  "validation_precision": 0.8918918918918919,
+  "validation_recall": 0.8918918918918919,
+  "validation_f1": 0.8918918918918919,
+  "validation_mcc": 0.7807807807807807,
+  "validation_roc_auc": 0.9504689875060244,
+  "validation_average_precision": 0.9501585053227865
+}

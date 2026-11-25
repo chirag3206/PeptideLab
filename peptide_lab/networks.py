@@ -4,11 +4,11 @@ from torch import nn
 from .config import START, END
 
 class PeptideCNN(nn.Module):
-    def __init__(self):
+    def __init__(self, filters=32, dropout=.3):
         super().__init__()
         self.embedding = nn.Embedding(21, 24, padding_idx=0)
-        self.convs = nn.ModuleList([nn.Conv1d(24, 32, k, padding=k//2) for k in (3, 5, 7)])
-        self.head = nn.Sequential(nn.Linear(96 + 25, 48), nn.ReLU(), nn.Dropout(.3), nn.Linear(48, 1))
+        self.convs = nn.ModuleList([nn.Conv1d(24, filters, k, padding=k//2) for k in (3, 5, 7)])
+        self.head = nn.Sequential(nn.Linear(filters*3 + 25, 48), nn.ReLU(), nn.Dropout(dropout), nn.Linear(48, 1))
 
     def forward(self, tokens, descriptors):
         x = self.embedding(tokens).transpose(1, 2)

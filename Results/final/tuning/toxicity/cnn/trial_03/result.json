@@ -1,0 +1,21 @@
+{
+  "task": "toxicity",
+  "family": "cnn",
+  "trial": 3,
+  "role": "candidate",
+  "config": {
+    "lr": 0.0005,
+    "filters": 16,
+    "dropout": 0.2
+  },
+  "best_epoch": 18,
+  "seconds": 7.823670299956575,
+  "seed": 42,
+  "validation_accuracy": 0.8888888888888888,
+  "validation_precision": 0.9012345679012346,
+  "validation_recall": 0.8768768768768769,
+  "validation_f1": 0.8888888888888888,
+  "validation_mcc": 0.7781114447781114,
+  "validation_roc_auc": 0.9497367738108479,
+  "validation_average_precision": 0.9523360612146996
+}

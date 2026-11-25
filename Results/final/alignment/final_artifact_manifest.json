@@ -55,5 +55,6 @@
   "Data/esm2/sequences.csv": "01109df6d0cff4ba858d995d639746480e0f4b63521860cf6c1d9c70f8ddbe1c",
   "app.py": "9517d64f48f3325a8ee0c5f14bc45fb9ca0850637b21f2eace1cc58507182805",
   "requirements-lock.txt": "2aa4cf65e04b00aeb17174e70259c99f2bdf877d98a882bdb7eced311cc8a525",
-  "requirements.txt": "7fc3ae1fff56d84be375396a068b4e5f0ce2cc9f0bc61e3d7603dcfd91df4e56"
+  "requirements.txt": "7fc3ae1fff56d84be375396a068b4e5f0ce2cc9f0bc61e3d7603dcfd91df4e56",
+  "scripts/build_master_guide.py": "ae6394cba230f24486d673258ad43fdb14c28061d777fa9ff504f80782312f73"
 }

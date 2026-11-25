@@ -1,0 +1,146 @@
+{
+  "activity": {
+    "cnn": {
+      "task": "activity",
+      "family": "cnn",
+      "trial": 0,
+      "role": "baseline",
+      "config": {
+        "lr": 0.001,
+        "filters": 32,
+        "dropout": 0.3
+      },
+      "best_epoch": 7,
+      "seconds": 48.00320409995038,
+      "seed": 42,
+      "validation_accuracy": 0.9647676161919041,
+      "validation_precision": 0.9323116219667944,
+      "validation_recall": 0.9468223086900129,
+      "validation_f1": 0.9395109395109396,
+      "validation_mcc": 0.9147127431385614,
+      "validation_roc_auc": 0.9930599000264599,
+      "validation_average_precision": 0.9845975133443703
+    },
+    "forest": {
+      "task": "activity",
+      "family": "forest",
+      "trial": 1,
+      "role": "candidate",
+      "config": {
+        "n_estimators": 240,
+        "max_depth": 20,
+        "min_samples_leaf": 1
+      },
+      "best_epoch": null,
+      "seconds": 5.926214799983427,
+      "seed": 42,
+      "validation_accuracy": 0.9640179910044977,
+      "validation_precision": 0.9642365887207703,
+      "validation_recall": 0.9092088197146563,
+      "validation_f1": 0.9359145527369827,
+      "validation_mcc": 0.9116915112605387,
+      "validation_roc_auc": 0.9919280015479423,
+      "validation_average_precision": 0.9852437987565189
+    },
+    "pipeline": {
+      "before": {
+        "model": "ensemble",
+        "validation_auc": {
+          "cnn": 0.9930599000264599,
+          "forest": 0.9917980947458168,
+          "ensemble": 0.9943948633483
+        }
+      },
+      "after": {
+        "model": "ensemble",
+        "validation_auc": {
+          "cnn": 0.9930599000264599,
+          "forest": 0.9919280015479423,
+          "ensemble": 0.9944413563090606
+        }
+      }
+    }
+  },
+  "toxicity": {
+    "cnn": {
+      "task": "toxicity",
+      "family": "cnn",
+      "trial": 0,
+      "role": "baseline",
+      "config": {
+        "lr": 0.001,
+        "filters": 32,
+        "dropout": 0.3
+      },
+      "best_epoch": 15,
+      "seconds": 14.574778800015338,
+      "seed": 42,
+      "validation_accuracy": 0.9101978691019786,
+      "validation_precision": 0.9391025641025641,
+      "validation_recall": 0.8798798798798799,
+      "validation_f1": 0.9085271317829458,
+      "validation_mcc": 0.8221986578590789,
+      "validation_roc_auc": 0.9685333481629779,
+      "validation_average_precision": 0.9703569960986341
+    },
+    "forest": {
+      "task": "toxicity",
+      "family": "forest",
+      "trial": 1,
+      "role": "candidate",
+      "config": {
+        "n_estimators": 240,
+        "max_depth": 20,
+        "min_samples_leaf": 1
+      },
+      "best_epoch": null,
+      "seconds": 1.2736524000065401,
+      "seed": 42,
+      "validation_accuracy": 0.898021308980213,
+      "validation_precision": 0.8982035928143712,
+      "validation_recall": 0.9009009009009009,
+      "validation_f1": 0.8995502248875562,
+      "validation_mcc": 0.7959995188690581,
+      "validation_roc_auc": 0.9527444110777443,
+      "validation_average_precision": 0.9514411460314802
+    },
+    "pipeline": {
+      "before": {
+        "model": "cnn",
+        "validation_auc": {
+          "cnn": 0.9685333481629779,
+          "forest": 0.9525173321469618,
+          "ensemble": 0.9671616060504951
+        }
+      },
+      "after": {
+        "model": "cnn",
+        "validation_auc": {
+          "cnn": 0.9685333481629779,
+          "forest": 0.9527444110777443,
+          "ensemble": 0.9676528380232083
+        }
+      }
+    }
+  },
+  "vae": {
+    "vae": {
+      "task": "vae",
+      "family": "vae",
+      "trial": 1,
+      "role": "candidate",
+      "config": {
+        "latent": 24,
+        "lr": 0.002,
+        "word_dropout": 0.0
+      },
+      "best_epoch": 30,
+      "seconds": 86.65687220008112,
+      "seed": 42,
+      "validation_reconstruction": 1.6458545944839662,
+      "validation_kl": 13.513556297290526,
+      "validation_token_accuracy": 0.5092757125595281,
+      "validation_objective": 1.9161257204297768
+    }
+  }
+}

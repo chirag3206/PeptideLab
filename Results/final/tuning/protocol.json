@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "seed": 42,
+  "trials_per_family": 4,
+  "cnn_epochs": 18,
+  "vae_epochs": 30,
+  "tasks": [
+    "activity",
+    "toxicity",
+    "vae"
+  ],
+  "search": "Seeded random sample without replacement, baseline always included; full saved training/validation splits.",
+  "selection": "Validation ROC-AUC for classifiers; reconstruction + fixed 0.02*KL for VAE. Ties retain earliest trial.",
+  "limitations": "Single training seed. Follow-up on previously inspected test benchmarks; not external or similarity-disjoint validation. ESM excluded from this search.",
+  "spaces": {
+    "cnn": {
+      "lr": [
+        0.0005,
+        0.001
+      ],
+      "filters": [
+        16,
+        32
+      ],
+      "dropout": [
+        0.2,
+        0.3,
+        0.5
+      ]
+    },
+    "forest": {
+      "n_estimators": [
+        120,
+        240
+      ],
+      "max_depth": [
+        10,
+        20,
+        null
+      ],
+      "min_samples_leaf": [
+        1,
+        2,
+        4
+      ]
+    },
+    "vae": {
+      "latent": [
+        16,
+        24,
+        32
+      ],
+      "lr": [
+        0.001,
+        0.002
+      ],
+      "word_dropout": [
+        0.0,
+        0.2
+      ]
+    }
+  },
+  "plans": {
+    "cnn": [
+      {
+        "lr": 0.001,
+        "filters": 32,
+        "dropout": 0.3
+      },
+      {
+        "lr": 0.001,
+        "filters": 16,
+        "dropout": 0.2
+      },
+      {
+        "lr": 0.001,
+        "filters": 16,
+        "dropout": 0.3
+      },
+      {
+        "lr": 0.0005,
+        "filters": 16,
+        "dropout": 0.2
+      }
+    ],
+    "forest": [
+      {
+        "n_estimators": 240,
+        "max_depth": null,
+        "min_samples_leaf": 2
+      },
+      {
+        "n_estimators": 240,
+        "max_depth": 20,
+        "min_samples_leaf": 1
+      },
+      {
+        "n_estimators": 240,
+        "max_depth": null,
+        "min_samples_leaf": 4
+      },
+      {
+        "n_estimators": 240,
+        "max_depth": 10,
+        "min_samples_leaf": 4
+      }
+    ],
+    "vae": [
+      {
+        "latent": 24,
+        "lr": 0.002,
+        "word_dropout": 0.2
+      },
+      {
+        "latent": 24,
+        "lr": 0.002,
+        "word_dropout": 0.0
+      },
+      {
+        "latent": 32,
+        "lr": 0.001,
+        "word_dropout": 0.0
+      },
+      {
+        "latent": 16,
+        "lr": 0.001,
+        "word_dropout": 0.0
+      }
+    ]
+  },
+  "split_sha256": {
+    "activity_train": "44440ab27d8bddcb72c54788d09121128f59e1c949c0961865d0c7ab88fc8c65",
+    "activity_validation": "f268e0423c55fbca564bc32e797e3f94a604375f9a47b304c744ad7aab5bb2c6",
+    "activity_test": "76fcbfde3dc25c348439c382b6e2ac67c04e4bd78a8e9a740c666f6a09b56458",
+    "toxicity_train": "c7fbcaf905b91fb68483be2db761e8e0ff05a978ecd86ae17d2fa233fc17b52d",
+    "toxicity_validation": "5315ec5cf86727c9d2a85e3b04d2155bd27ea1bc7ff1d666a20105bf75a5b7d4",
+    "toxicity_test": "f87073f865086b0265d408068c7dad3630bdcb9b833c09b4e3ced659b8805be6",
+    "vae_train": "b8c1107b2b0ce0bcc55990846e0e325fa98e849f86cf8dd4d71eeb1c73a17156",
+    "vae_validation": "01db7789decce07ed38bf00cc9f3a5426e94851b01dd46363598842e90a6029c",
+    "vae_test": "b66405c28b8a777aefdfdc42d9342aa54f562ca20c1cabc7a12c96c25e870eda"
+  },
+  "code_sha256": {
+    "tuning.py": "6fbc433c43dbd593b600d2c0e1da3daa9e35e4d7b177e9cd201f0920e619887a",
+    "networks.py": "2ce8e776837198a6cfd0a18a1212a09bdb540298a6fed12563fa8928e6e9b71e",
+    "features.py": "730d68b474e20c38f976174a86e4e050de19272edbb60a08915234003c8f14f7",
+    "training.py": "f6b47ea4ca8a2dd0e2a2471e15e1e102ff700e2f3ac84bd22eb6954c24eb37ba"
+  },
+  "production_sha256": {
+    "activity_baseline.joblib": "bba887bee4169dc49c13dd2b9f6f6a52cf3ff992fcfed49041dc632fbab1a95e",
+    "activity_cnn.pt": "0af59c6411ef24cb022cd82580c3c9437bc752f8a06bed077e28c5f498387a36",
+    "toxicity_baseline.joblib": "8df51dfe268123e4fb117d713d4e4359eb02dee6241d5c2c37be9de342d8dc9b",
+    "toxicity_cnn.pt": "e08da430d7f0c61a7730e0f1fa09239cac3c6e2dc360bd2ace26beae43a5b763",
+    "vae.pt": "9aca0ad5090213938099fb634d773711c98cfd0a5d0a39aaa718a5c52fac2142"
+  }
+}

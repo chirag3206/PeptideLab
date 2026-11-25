@@ -2,6 +2,8 @@
 cd /d "%~dp0"
 python -m peptide_lab.training
 if errorlevel 1 goto failed
+python -m peptide_lab.targets
+if errorlevel 1 goto failed
 python -m peptide_lab.screening_thresholds
 if errorlevel 1 goto failed
 python -m peptide_lab.pipeline

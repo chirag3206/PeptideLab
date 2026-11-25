@@ -1,6 +1,5 @@
 """Build the final document-alignment addendum from measured local artifacts."""
 from pathlib import Path
-import hashlib
 import html
 import json
 import sys
@@ -9,6 +8,52 @@ import pandas as pd
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from peptide_lab.config import RESULTS
+
+def tuning_section():
+    folder = RESULTS / 'tuning'
+    status_file = folder / 'status.json'
+    if not status_file.exists() or json.loads(status_file.read_text()).get('state') != 'complete':
+        return ''
+    selection = json.loads((folder/'selection.json').read_text())
+    rows = []
+    for task in ('activity', 'toxicity'):
+        scores = json.loads((folder/f'{task}_test_results.json').read_text())
+        for family, label in [('cnn', 'CNN'), ('forest', 'Random forest'), ('ensemble', 'Ensemble')]:
+            trial = ('Selected CNN + forest' if family == 'ensemble'
+                     else str(selection[task][family]['trial']))
+            rows.append({'Task': task.capitalize(), 'Model': label, 'Selected trial': trial,
+                         'Default accuracy': scores['Before'][family]['accuracy'],
+                         'Selected accuracy': scores['After'][family]['accuracy'],
+                         'Default ROC-AUC': scores['Before'][family]['roc_auc'],
+                         'Selected ROC-AUC': scores['After'][family]['roc_auc']})
+    vae = pd.read_csv(folder/'before_after.csv')
+    vae = vae.loc[(vae.task == 'vae') & vae.metric.isin(['objective', 'token_accuracy']), ['metric', 'before', 'after']]
+    return ('<h2>20. Hyperparameter tuning</h2>'
+            '<p>Trial 0 is the default. Validation ROC-AUC selected classifier settings. Each ensemble averages its CNN and forest scores. '
+            'The table compares default and selected configurations on the held-out test split. The dashboard’s compact predictor uses its original deployed checkpoint.</p>'
+            + pd.DataFrame(rows).round(4).to_html(index=False)
+            + f'<p>VAE trial {selection["vae"]["vae"]["trial"]} had the lowest validation objective. Its test results follow. '
+              'Token accuracy measures correctly predicted residues.</p>'
+            + vae.rename(columns={'metric':'VAE test metric','before':'Default','after':'Selected'}).round(4).to_html(index=False)
+            + '<p><a href="../Results/final/tuning/trials.csv">All validation trials and settings</a></p>')
+
+def add_target_results(report):
+    targets = pd.read_csv(RESULTS / 'target_benchmark/comparison.csv')
+    table = targets[['target', 'test_rows', 'before_accuracy', 'accuracy', 'before_auc', 'auc']].rename(columns={
+        'target': 'Organism', 'test_rows': 'Test peptides', 'before_accuracy': 'Baseline accuracy',
+        'accuracy': 'Selected accuracy', 'before_auc': 'Baseline ROC-AUC', 'auc': 'Selected ROC-AUC'})
+    marker = '<!-- TARGET_SCREENING -->'
+    text = report.read_text(encoding='utf-8').split(marker)[0]
+    text = text.partition('</main>')[0]
+    section = (f'{marker}<h2>19. Organism-specific evaluation</h2>'
+               '<p>The general activity and toxicity benchmarks answer separate questions. For each evaluated organism, '
+               'the specialised model classifies whether the measured MIC was at or below 10 µM. '
+               'The baseline and selected model were evaluated on the same held-out peptides for that organism.</p>'
+               + table.round(3).to_html(index=False)
+               + f'<p>Giving each of the {len(targets)} evaluated organisms equal weight, mean selected accuracy was '
+                 f'{targets.accuracy.mean():.1%} and mean ROC-AUC was {targets.auc.mean():.3f}. '
+                 'TB and SARS-CoV-2 have evidence summaries and no test scores. Related sequences can occur across splits.</p>')
+    report.write_text(text + section + tuning_section() + '</main></body></html>', encoding='utf-8')
 
 def main():
     docs=ROOT/'Documentation'
@@ -103,6 +148,7 @@ The original PPT is not automatically overwritten. This guide provides the recon
     if marker in content:content=content.split(marker)[0]+'</main></body></html>'
     addition=marker+'<h2>18. Final three-document alignment and measured ESM-2 comparison</h2>'+comparison.round(6).to_html(index=False)+'<pre style="white-space:pre-wrap;font:inherit">'+html.escape(text)+'</pre>'
     report.write_text(content.replace('</main>',addition+'</main>'),encoding='utf-8')
+    add_target_results(report)
     def cell(kind,source):
         c={'cell_type':kind,'metadata':{},'source':source.splitlines(keepends=True)}
         if kind=='code':c.update(execution_count=None,outputs=[])

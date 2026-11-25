@@ -3,3 +3,7 @@ __pycache__/
 .venv/
 .ipynb_checkpoints/
 .pytest_cache/
+
+# Local experiment checkpoints and machine-specific test output
+Results/final/extended/toy_runs/*/weights.pt
+Results/final/extended/verification_tests.txt

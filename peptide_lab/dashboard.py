@@ -34,7 +34,7 @@ def inspection(frame, key):
             meaning = ('Antimicrobial' if int(label) else 'Non-antimicrobial') if task=='activity' else ('Toxic' if int(label) else 'Non-toxic')
             matches = bool(row[task + '_matches_label'])
             st.write(f'**Known {task} label:** {meaning} · **Dataset split:** {split} · **Matches prediction:** {"Yes" if matches else "No"}')
-        else:
+        elif task + '_label' in row:
             st.caption(f'No {task} benchmark label is available for this sequence. A prediction is not a measured label.')
     with st.expander('Sequence properties and predictor agreement'):
         st.json({name: float(row[name]) for name in ['length','charge_proxy','hydrophobic_fraction','mean_hydropathy','entropy','activity_model_disagreement','toxicity_model_disagreement']})
@@ -116,8 +116,12 @@ def history_page(table):
     choice = st.selectbox('Prediction run',range(len(runs)),index=len(runs)-1,format_func=lambda i:f'{i+1}. {runs[i]["kind"]} · {runs[i]["time"]} · {len(runs[i]["frame"])} peptides')
     run = runs[choice]
     st.json(run['settings'])
-    table(run['frame'])
-    inspection(run['frame'],'history_inspection')
+    if 'target_activity_score' in run['frame']:
+        from .target_dashboard import target_result_table
+        target_result_table(run['frame'])
+    else:
+        table(run['frame'])
+        inspection(run['frame'],'history_inspection')
     st.caption('History is session-local and clears on a new session. Download CSVs to retain your work.')
 
 def research_page():

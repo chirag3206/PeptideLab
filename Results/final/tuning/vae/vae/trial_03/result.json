@@ -1,0 +1,18 @@
+{
+  "task": "vae",
+  "family": "vae",
+  "trial": 3,
+  "role": "candidate",
+  "config": {
+    "latent": 16,
+    "lr": 0.001,
+    "word_dropout": 0.0
+  },
+  "best_epoch": 30,
+  "seconds": 84.62700999993831,
+  "seed": 42,
+  "validation_reconstruction": 1.8836344226064674,
+  "validation_kl": 9.465250990907169,
+  "validation_token_accuracy": 0.4323690383111806,
+  "validation_objective": 2.0729394424246106
+}

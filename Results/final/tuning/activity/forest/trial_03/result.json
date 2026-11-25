@@ -1,0 +1,21 @@
+{
+  "task": "activity",
+  "family": "forest",
+  "trial": 3,
+  "role": "candidate",
+  "config": {
+    "n_estimators": 240,
+    "max_depth": 10,
+    "min_samples_leaf": 4
+  },
+  "best_epoch": null,
+  "seconds": 4.6458747000433505,
+  "seed": 42,
+  "validation_accuracy": 0.9598950524737632,
+  "validation_precision": 0.9403183023872679,
+  "validation_recall": 0.9195849546044098,
+  "validation_f1": 0.9298360655737705,
+  "validation_mcc": 0.9018741829900433,
+  "validation_roc_auc": 0.9915485369417341,
+  "validation_average_precision": 0.9837442773894166
+}
