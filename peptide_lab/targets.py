@@ -13,6 +13,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from .config import DATA, ROOT, AA
 from .features import features
+from .pipeline import priority_scores
 
 BUNDLE = ROOT/'Models/target_screening.joblib'
 TARGETS = {
@@ -64,12 +65,19 @@ def estimator(name):
 
 def metrics_for(model, test):
     scores = model.predict_proba(features(test.sequence))[:,1]
+    return target_metrics(test, scores), scores
+
+
+def target_metrics(test, scores):
     return {'auc':float(roc_auc_score(test.label,scores)),
             'accuracy':float(accuracy_score(test.label,scores>=.5)),
-            'balanced_accuracy':float(balanced_accuracy_score(test.label,scores>=.5))}, scores
+            'balanced_accuracy':float(balanced_accuracy_score(test.label,scores>=.5))}
 
 
 def build():
+    from .esm_predictor import ESMPredictor, fit_head, scores as head_scores
+    embedder = ESMPredictor()
+    embedding_cache = {}
     path = DATA/'raw/grampa.csv'
     qpath = DATA/'external/qmap_dbaasp.json'
     external = qmap_labels(qpath)
@@ -119,12 +127,31 @@ def build():
         measured,scores = metrics_for(model,test)
         baseline = estimator('Logistic regression').fit(features(train.sequence),train.label)
         before,_ = metrics_for(baseline,test)
+        # Reuse the compact engine's validation and test sets. The ESM scaler
+        # and classifier weights are fitted only on the remaining training rows.
+        esm_fit = all_train[~all_train.sequence.isin(val.sequence)]
+        splits = {'train': esm_fit, 'validation': val, 'test': test}
+        sequences = pd.concat([part.sequence for part in splits.values()]).unique()
+        missing = [seq for seq in sequences if seq not in embedding_cache]
+        if missing:
+            embedding_cache.update(zip(missing, embedder.embeddings(missing)))
+        matrices = {key: np.stack([embedding_cache[s] for s in part.sequence]) for key,part in splits.items()}
+        scaler = StandardScaler().fit(matrices['train'])
+        matrices = {key: scaler.transform(values).astype('float32') for key,values in matrices.items()}
+        labels = {key: part.label.to_numpy(dtype='float32') for key,part in splits.items() if key != 'test'}
+        head, epoch, val_auc, _ = fit_head(code, matrices, labels)
+        esm_scores = head_scores(head, matrices['test'])
+        esm_metrics = target_metrics(test, esm_scores)
         test = test.copy()
         test['target_activity_score'] = scores
+        test['target_esm2_score'] = esm_scores
+        entry.update(esm_head=(head, scaler), esm_metrics=esm_metrics, esm_best_epoch=epoch,
+                     esm_validation_auc=val_auc, esm_train_count=len(esm_fit), esm_validation_count=len(val))
         entry.update(model=model, test=test.reset_index(drop=True),train_count=len(all_train),
                      method=method,training_pool=pool,baseline_pool=baseline_pool,baseline=before,**measured)
         comparisons.append(dict(target=code,eligible_new=len(extra),model=method,pool=pool,
-                                test_rows=len(test),**{'before_'+k:v for k,v in before.items()},**measured))
+                                test_rows=len(test),**{'before_'+k:v for k,v in before.items()},**measured,
+                                **{'esm2_'+k:v for k,v in esm_metrics.items()}))
         print(code, len(extra), method, pool, before, measured, flush=True)
     audit = ROOT/'Results/final/target_benchmark'
     audit.mkdir(parents=True,exist_ok=True)
@@ -139,15 +166,23 @@ def build():
     temp.replace(BUNDLE)
 
 def rank_target(frame, code, entry, ranking_rule, weight):
-    scores = entry['model'].predict_proba(features(frame.sequence))[:,1]
+    if 'target_activity_score' in frame and 'target_engine' in frame:
+        if not frame.target_engine.eq(frame.prediction_engine).all():
+            raise ValueError('The target and general predictions must use the same engine.')
+        scores = frame.target_activity_score
+    elif frame.prediction_engine.eq('compact').all():
+        scores = entry['model'].predict_proba(features(frame.sequence))[:,1]
+    else:
+        raise ValueError('Run the selected ESM-2 target classifier before ranking.')
     rows = frame[['sequence','activity_score','activity_prediction','toxicity_score','toxicity_prediction',
                   'rank','priority_score','prediction_engine']].rename(
         columns={'activity_score':'general_activity_score', 'activity_prediction':'general_activity_prediction',
                  'prediction_engine':'toxicity_engine', 'rank':'general_rank', 'priority_score':'general_priority_score'}).copy()
     rows.insert(0,'target',code)
+    rows['general_engine'] = frame.prediction_engine
+    rows['target_engine'] = frame.prediction_engine
     rows['target_activity_score'] = scores
-    rows['priority_score'] = (100*scores*(1-rows.toxicity_score) if ranking_rule=='product'
-                              else 100*(weight*scores+(1-weight)*(1-rows.toxicity_score)))
+    rows['priority_score'] = priority_scores(scores, rows.toxicity_score, ranking_rule, weight)
     rows['ranking_rule'] = ranking_rule
     if ranking_rule != 'product':
         rows['activity_weight'] = weight

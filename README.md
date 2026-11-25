@@ -28,7 +28,9 @@ Sequence filtering and validation-selected property screening are separate. Ever
 2. Choose *Escherichia coli*, keep **Dataset peptides** selected, and click **Screen for selected target**. Each row shows general activity, general toxicity, the E. coli activity score, and its measured lower-MIC label. A measured label of 1 means the recorded minimum inhibitory concentration was at or below 10 µM. General rank and target rank compare the same batch.
 3. Open **Evidence for this target** for the baseline and selected model on the same test peptides. Choose **Overall results** to see the general compact predictors, all target models, the average across evaluated organisms, and a downloadable comparison. **Run a general prediction** opens standalone screening.
 
-Eight organisms have evaluated models. TB and SARS-CoV-2 have evidence summaries. To reproduce the organism benchmarks using the included data, run `python -m peptide_lab.targets`. The [test comparisons](Results/final/target_benchmark/comparison.csv) and [validation trials](Results/final/target_benchmark/validation_trials.csv) contain the evaluation results.
+Eight organisms have evaluated compact and ESM-2 + CNN models. The sidebar engine supplies general activity, toxicity, and the chosen organism’s activity score. **Overall results** shows the selected engine’s benchmarks. Each organism-specific ESM-2 head learns from measured MIC labels and is tested on the same held-out sequences as its compact counterpart. Product and Weighted difference use the corresponding engine’s scores for both general and target ranks. Run prediction again after changing a setting. Saved results record their original settings.
+
+TB and SARS-CoV-2 have evidence summaries. To reproduce the organism benchmarks using the included data, run `python -m peptide_lab.targets`. The [test comparisons](Results/final/target_benchmark/comparison.csv) and [compact validation trials](Results/final/target_benchmark/validation_trials.csv) contain the evaluation results.
 
 ### Other dashboard features
 

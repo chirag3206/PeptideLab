@@ -80,18 +80,9 @@ def scores(model, x):
     model.eval()
     return np.concatenate([torch.sigmoid(model(torch.as_tensor(x[i:i+256],dtype=torch.float32))).numpy() for i in range(0,len(x),256)])
 
-def train_head(task, sequences, embeddings):
+def fit_head(task, x, y):
     import copy
     seed_everything()
-    OUTPUT.mkdir(parents=True,exist_ok=True)
-    model_folder = ROOT/'Models/esm2_heads'
-    model_folder.mkdir(parents=True,exist_ok=True)
-    lookup={s:i for i,s in enumerate(sequences)}
-    frames={part:pd.read_csv(DATA/'final'/f'{task}_{part}.csv') for part in ['train','validation','test']}
-    x={part:embeddings[[lookup[s] for s in frame.sequence]] for part,frame in frames.items()}
-    scaler=StandardScaler().fit(x['train'])
-    x={part:scaler.transform(value).astype(np.float32) for part,value in x.items()}
-    y={part:frame.label.to_numpy(dtype=np.float32) for part,frame in frames.items()}
     model=ESMHead()
     optimizer=torch.optim.AdamW(model.parameters(),lr=.0005,weight_decay=.001)
     loss_fn=nn.BCEWithLogitsLoss(pos_weight=torch.tensor(float((y['train']==0).sum()/(y['train']==1).sum())))
@@ -111,6 +102,19 @@ def train_head(task, sequences, embeddings):
         else:stale+=1
         if stale>=6:break
     model.load_state_dict(best)
+    return model.eval(), best_epoch, best_auc, history
+
+def train_head(task, sequences, embeddings):
+    OUTPUT.mkdir(parents=True,exist_ok=True)
+    model_folder = ROOT/'Models/esm2_heads'
+    model_folder.mkdir(parents=True,exist_ok=True)
+    lookup={s:i for i,s in enumerate(sequences)}
+    frames={part:pd.read_csv(DATA/'final'/f'{task}_{part}.csv') for part in ['train','validation','test']}
+    x={part:embeddings[[lookup[s] for s in frame.sequence]] for part,frame in frames.items()}
+    scaler=StandardScaler().fit(x['train'])
+    x={part:scaler.transform(value).astype(np.float32) for part,value in x.items()}
+    y={part:frame.label.to_numpy(dtype=np.float32) for part,frame in frames.items()}
+    model, best_epoch, best_auc, history = fit_head(task, x, y)
     validation_frame=frames['validation'].copy()
     validation_frame['esm2_score']=scores(model,x['validation'])
     validation_frame.to_csv(OUTPUT/f'{task}_validation_predictions.csv',index=False)
@@ -118,7 +122,7 @@ def train_head(task, sequences, embeddings):
     baseline=json.loads((RESULTS/f'{task}_metrics.json').read_text())
     baseline_auc=baseline['validation_auc'][baseline['selected_model']]
     recommended='esm2_cnn' if best_auc>baseline_auc else 'compact_baseline'
-    torch.save(best,model_folder/f'{task}.pt')
+    torch.save(model.state_dict(),model_folder/f'{task}.pt')
     joblib.dump(scaler,model_folder/f'{task}_scaler.joblib')
     pred=scores(model,x['test'])
     frame=frames['test'].copy();frame['esm2_score']=pred;frame.to_csv(OUTPUT/f'{task}_test_predictions.csv',index=False)
@@ -152,13 +156,19 @@ class ESMPredictor:
             if self.cached.shape != (len(self.lookup),320):
                 raise ValueError('Embedding cache sequence/shape mismatch.')
 
-    def predict(self,sequences):
+    def embeddings(self,sequences):
         matrix=np.empty((len(sequences),320),dtype=np.float32)
         missing=[i for i,s in enumerate(sequences) if s not in self.lookup]
         for i,s in enumerate(sequences):
             if s in self.lookup:matrix[i]=self.cached[self.lookup[s]]
         if missing:matrix[missing]=self.embedder.encode([sequences[i] for i in missing])
-        return {task:scores(head,scaler.transform(matrix).astype(np.float32)) for task,(head,scaler) in self.heads.items()}
+        return matrix
+
+    def predict(self, sequences, target_head=None):
+        matrix = self.embeddings(sequences)
+        heads = self.heads if target_head is None else {**self.heads, 'target': target_head}
+        return {name: scores(head, scaler.transform(matrix).astype(np.float32))
+                for name, (head, scaler) in heads.items()}
 
 def main():
     started=time.time()

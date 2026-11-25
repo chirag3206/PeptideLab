@@ -39,19 +39,21 @@ def tuning_section():
 
 def add_target_results(report):
     targets = pd.read_csv(RESULTS / 'target_benchmark/comparison.csv')
-    table = targets[['target', 'test_rows', 'before_accuracy', 'accuracy', 'before_auc', 'auc']].rename(columns={
+    table = targets[['target', 'test_rows', 'before_accuracy', 'accuracy', 'esm2_accuracy', 'before_auc', 'auc', 'esm2_auc']].rename(columns={
         'target': 'Organism', 'test_rows': 'Test peptides', 'before_accuracy': 'Baseline accuracy',
-        'accuracy': 'Selected accuracy', 'before_auc': 'Baseline ROC-AUC', 'auc': 'Selected ROC-AUC'})
+        'accuracy': 'Compact accuracy', 'before_auc': 'Baseline ROC-AUC', 'auc': 'Compact ROC-AUC',
+        'esm2_accuracy': 'ESM-2 + CNN accuracy', 'esm2_auc': 'ESM-2 + CNN ROC-AUC'})
     marker = '<!-- TARGET_SCREENING -->'
     text = report.read_text(encoding='utf-8').split(marker)[0]
     text = text.partition('</main>')[0]
     section = (f'{marker}<h2>19. Organism-specific evaluation</h2>'
                '<p>The general activity and toxicity benchmarks answer separate questions. For each evaluated organism, '
                'the specialised model classifies whether the measured MIC was at or below 10 µM. '
-               'The baseline and selected model were evaluated on the same held-out peptides for that organism.</p>'
+               'All engines used the same held-out peptides for each organism. The ESM-2 head used a separate validation set for checkpoint selection.</p>'
                + table.round(3).to_html(index=False)
-               + f'<p>Giving each of the {len(targets)} evaluated organisms equal weight, mean selected accuracy was '
+               + f'<p>Across {len(targets)} equally weighted organisms, compact mean accuracy was '
                  f'{targets.accuracy.mean():.1%} and mean ROC-AUC was {targets.auc.mean():.3f}. '
+                 f'ESM-2 + CNN achieved {targets.esm2_accuracy.mean():.1%} mean accuracy and {targets.esm2_auc.mean():.3f} mean ROC-AUC. '
                  'TB and SARS-CoV-2 have evidence summaries and no test scores. Related sequences can occur across splits.</p>')
     report.write_text(text + section + tuning_section() + '</main></body></html>', encoding='utf-8')
 

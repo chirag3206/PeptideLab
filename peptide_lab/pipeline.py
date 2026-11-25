@@ -9,6 +9,13 @@ from .features import validate, features, encode, properties
 from .networks import PeptideCNN, PeptideVAE
 from .training import cnn_predict
 
+def priority_scores(activity, toxicity, rule, weight):
+    if rule == 'product':
+        return 100 * activity * (1 - toxicity)
+    if rule == 'weighted_difference' and 0 <= weight <= 1:
+        return 100 * (weight * activity + (1 - weight) * (1 - toxicity))
+    raise ValueError('Invalid ranking rule or activity weight.')
+
 class ScreeningPipeline:
     def __init__(self, engine='compact', ranking_rule='product', activity_weight=.5):
         if ranking_rule not in ['product', 'weighted_difference'] or not 0 <= activity_weight <= 1:
@@ -37,13 +44,21 @@ class ScreeningPipeline:
         for task in ('activity', 'toxicity'):
             self.classifier_train.update(pd.read_csv(DATA / 'final' / f'{task}_train.csv').sequence)
 
-    def predict(self, sequences):
+    def predict(self, sequences, target_entry=None):
         sequences = [validate(s) for s in sequences]
         if not sequences:
             raise ValueError('No sequences to screen.')
         x, tokens = features(sequences), encode(sequences)
         result = pd.DataFrame({'sequence': sequences})
-        esm_scores = self.esm.predict(sequences) if self.esm is not None else None
+        esm_scores = None
+        if self.esm is not None:
+            if target_entry is not None and 'esm_head' not in target_entry:
+                raise ValueError('This organism has no ESM-2 target classifier. Rebuild the target bundle with python -m peptide_lab.targets.')
+            esm_scores = self.esm.predict(sequences, target_entry['esm_head'] if target_entry is not None else None)
+        if target_entry is not None:
+            result['target_activity_score'] = (esm_scores['target'] if esm_scores is not None
+                                               else target_entry['model'].predict_proba(x)[:, 1])
+            result['target_engine'] = self.engine
         for task, (metadata, cnn) in self.classifiers.items():
             rf = metadata['forest'].predict_proba(x)[:, 1]
             cp = cnn_predict(cnn, tokens, metadata['scaler'].transform(x).astype(np.float32))
@@ -55,10 +70,8 @@ class ScreeningPipeline:
                 result[task + '_esm2_score'] = esm_scores[task]
             result[task + '_model_disagreement'] = np.abs(cp - rf)
         # A transparent preference score, NOT the probability that a peptide is safe/effective.
-        result['priority_score'] = 100 * result.activity_score * (1 - result.toxicity_score)
+        result['priority_score'] = priority_scores(result.activity_score, result.toxicity_score, self.ranking_rule, self.activity_weight)
         result['weighted_difference_score'] = self.activity_weight * result.activity_score - (1-self.activity_weight) * result.toxicity_score
-        if self.ranking_rule == 'weighted_difference':
-            result['priority_score'] = 100 * (result.weighted_difference_score + 1-self.activity_weight)
         result['ranking_rule'] = self.ranking_rule
         result['activity_weight'] = self.activity_weight
         result['prediction_engine'] = self.engine
@@ -77,7 +90,7 @@ class ScreeningPipeline:
         result.insert(0, 'rank', np.arange(1, len(result) + 1))
         return result
 
-    def generate(self, count=500, seed=42, temperature=.9, min_length=10, max_length=40):
+    def generate(self, count=500, seed=42, temperature=.9, min_length=10, max_length=40, target_entry=None):
         if not 1 <= count <= 3000 or not 5 <= min_length <= max_length <= 60 or not .5 <= temperature <= 1.3:
             raise ValueError('Use 1-3000 raw samples, length 5-60, and temperature 0.5-1.3.')
         # Score every accepted sequence from the explicitly sized sampling pool.
@@ -101,9 +114,11 @@ class ScreeningPipeline:
         audit = {'sampled': len(sequences), 'passed_filters': len(accepted), 'returned': len(accepted), 'rejected': rejected,
                  'seed': seed, 'temperature': temperature, 'length_range': [min_length, max_length],
                  'selection': 'All passed-filter sequences scored and ranked together. No laboratory validation.'}
-        frame = self.predict(accepted) if accepted else pd.DataFrame()
+        frame = self.predict(accepted, target_entry=target_entry) if accepted else pd.DataFrame()
         audit['prediction_engine'] = self.engine
         audit['ranking_rule'] = self.ranking_rule
+        if self.ranking_rule == 'weighted_difference':
+            audit['activity_weight'] = self.activity_weight
         if 'passes_property_screen' in frame:
             audit['passed_property_screen'] = int(frame.passes_property_screen.sum())
         return frame, audit

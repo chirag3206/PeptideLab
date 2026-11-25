@@ -723,15 +723,17 @@ Install requirements-lock.txt and run RUN_PROJECT.bat (or python -m streamlit ru
 For ESM retraining: python -m peptide_lab.esm_predictor. For cutoff regeneration: python -m peptide_lab.screening_thresholds. For similarity/composition evidence: python -m peptide_lab.alignment_checks. Run python scripts/verify_project.py for software checks. The supplied weights already work; retraining is optional. Rebuild reports after any model changes. See FINALIZE_PROJECT.bat for the ordered evidence/report workflow without retraining production weights.
 
 Start your explanation with: &quot;We learn sequence patterns using a VAE, score generated or existing peptides using two independent supervised tasks, and prioritize candidates for further investigation. We validate software and benchmark performance, not biological efficacy.&quot;
-</pre><!-- TARGET_SCREENING --><h2>19. Organism-specific evaluation</h2><p>The general activity and toxicity benchmarks answer separate questions. For each evaluated organism, the specialised model classifies whether the measured MIC was at or below 10 µM. The baseline and selected model were evaluated on the same held-out peptides for that organism.</p><table border="1" class="dataframe">
+</pre><!-- TARGET_SCREENING --><h2>19. Organism-specific evaluation</h2><p>The general activity and toxicity benchmarks answer separate questions. For each evaluated organism, the specialised model classifies whether the measured MIC was at or below 10 µM. All engines used the same held-out peptides for each organism. The ESM-2 head used a separate validation set for checkpoint selection.</p><table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th>Organism</th>
       <th>Test peptides</th>
       <th>Baseline accuracy</th>
-      <th>Selected accuracy</th>
+      <th>Compact accuracy</th>
+      <th>ESM-2 + CNN accuracy</th>
       <th>Baseline ROC-AUC</th>
-      <th>Selected ROC-AUC</th>
+      <th>Compact ROC-AUC</th>
+      <th>ESM-2 + CNN ROC-AUC</th>
     </tr>
   </thead>
   <tbody>
@@ -740,67 +742,83 @@ Start your explanation with: &quot;We learn sequence patterns using a VAE, score
       <td>697</td>
       <td>0.699</td>
       <td>0.763</td>
+      <td>0.730</td>
       <td>0.742</td>
       <td>0.848</td>
+      <td>0.792</td>
     </tr>
     <tr>
       <td>S. aureus</td>
       <td>589</td>
       <td>0.686</td>
       <td>0.732</td>
+      <td>0.677</td>
       <td>0.720</td>
       <td>0.807</td>
+      <td>0.756</td>
     </tr>
     <tr>
       <td>P. aeruginosa</td>
       <td>312</td>
       <td>0.696</td>
       <td>0.721</td>
+      <td>0.686</td>
       <td>0.762</td>
       <td>0.773</td>
+      <td>0.748</td>
     </tr>
     <tr>
       <td>K. pneumoniae</td>
       <td>110</td>
       <td>0.782</td>
       <td>0.809</td>
+      <td>0.809</td>
       <td>0.834</td>
       <td>0.867</td>
+      <td>0.788</td>
     </tr>
     <tr>
       <td>C. albicans</td>
       <td>232</td>
       <td>0.612</td>
       <td>0.746</td>
+      <td>0.690</td>
       <td>0.613</td>
       <td>0.796</td>
+      <td>0.716</td>
     </tr>
     <tr>
       <td>B. subtilis</td>
       <td>203</td>
       <td>0.773</td>
       <td>0.768</td>
+      <td>0.754</td>
       <td>0.824</td>
       <td>0.847</td>
+      <td>0.822</td>
     </tr>
     <tr>
       <td>S. epidermidis</td>
       <td>121</td>
       <td>0.694</td>
       <td>0.744</td>
+      <td>0.719</td>
       <td>0.750</td>
       <td>0.836</td>
+      <td>0.809</td>
     </tr>
     <tr>
       <td>E. faecalis</td>
       <td>104</td>
       <td>0.635</td>
       <td>0.673</td>
+      <td>0.615</td>
       <td>0.704</td>
       <td>0.769</td>
+      <td>0.635</td>
     </tr>
   </tbody>
-</table><p>Giving each of the 8 evaluated organisms equal weight, mean selected accuracy was 74.5% and mean ROC-AUC was 0.818. TB and SARS-CoV-2 have evidence summaries and no test scores. Related sequences can occur across splits.</p><h2>20. Hyperparameter tuning</h2><p>Trial 0 is the default. Validation ROC-AUC selected classifier settings. Each ensemble averages its CNN and forest scores. The table compares default and selected configurations on the held-out test split. The dashboard’s compact predictor uses its original deployed checkpoint.</p><table border="1" class="dataframe">
+</table><p>Across 8 equally weighted organisms, compact mean accuracy was 74.5% and mean ROC-AUC was 0.818. ESM-2 + CNN achieved 71.0% mean accuracy and 0.758 mean ROC-AUC. TB and SARS-CoV-2 have evidence summaries and no test scores. Related sequences can occur across splits.</p><h2>20. Hyperparameter tuning</h2><p>Trial 0 is the default. Validation ROC-AUC selected classifier settings. Each ensemble averages its CNN and forest scores. The table compares default and selected configurations on the held-out test split. The dashboard’s compact predictor uses its original deployed checkpoint.</p><table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th>Task</th>

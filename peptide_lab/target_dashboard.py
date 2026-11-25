@@ -14,6 +14,10 @@ def load_targets(timestamp):
     return joblib.load(BUNDLE)['targets']
 
 def target_result_table(result):
+    settings = result.iloc[0]
+    engine = 'ESM-2 + CNN' if settings.get('target_engine') == 'esm2' else 'Compact baseline'
+    rule = 'Product' if settings.ranking_rule == 'product' else f'Weighted difference (activity weight {settings.activity_weight:.2f})'
+    st.caption(f'Saved target prediction · {engine} · {rule}')
     st.caption('Each rank is within this batch. General rank combines general activity and toxicity. Target rank uses the organism activity score and the same toxicity score.')
     columns = ['rank', 'general_rank', 'sequence', 'general_activity_score', 'target_activity_score', 'toxicity_score']
     if 'observed_lower_MIC_label' in result:
@@ -46,14 +50,18 @@ def target_result_table(result):
     st.altair_chart(chart, use_container_width=True)
     st.caption(f'All {len(result)} peptides in the table are plotted. Hover for ranks and scores. Peptides with identical scores share a position.')
 
-def overall_results(targets):
+def overall_results(targets, engine):
     st.subheader('General predictors')
     rows = []
     for task in ('activity', 'toxicity'):
-        report = json.loads((RESULTS / f'{task}_metrics.json').read_text(encoding='utf-8'))
-        model = report['selected_model']
-        scores = report['test'][model]
-        rows.append({'Task': task.capitalize(), 'Compact model': model, 'Test peptides': sum(map(sum, scores['confusion_matrix'])),
+        if engine == 'esm2':
+            report = json.loads((RESULTS / 'esm2' / f'{task}_metrics.json').read_text(encoding='utf-8'))
+            model, scores = 'ESM-2 + CNN', report['test']
+        else:
+            report = json.loads((RESULTS / f'{task}_metrics.json').read_text(encoding='utf-8'))
+            model = report['selected_model']
+            scores = report['test'][model]
+        rows.append({'Task': task.capitalize(), 'Model': model, 'Test peptides': sum(map(sum, scores['confusion_matrix'])),
                      'Accuracy': scores['accuracy'], 'ROC-AUC': scores['roc_auc']})
     st.dataframe(pd.DataFrame(rows), hide_index=True, column_config={
         'Accuracy': st.column_config.NumberColumn(format='%.3f'), 'ROC-AUC': st.column_config.NumberColumn(format='%.3f')})
@@ -62,10 +70,12 @@ def overall_results(targets):
     st.subheader('Organism-specific predictors')
     rows = []
     for entry in targets.values():
-        tested = 'test' in entry
+        scores = entry.get('esm_metrics', {}) if engine == 'esm2' else entry
+        tested = 'auc' in scores
         rows.append({'Organism': entry['name'], 'Status': 'Evaluated' if tested else 'Evidence only',
                      'Eligible sequences': entry['sequences'], 'Test peptides': len(entry['test']) if tested else None,
-                     'Model': entry.get('method'), 'Accuracy': entry.get('accuracy'), 'ROC-AUC': entry.get('auc')})
+                     'Model': ('ESM-2 + CNN' if engine == 'esm2' else entry['method']) if tested else None,
+                     'Accuracy': scores.get('accuracy'), 'ROC-AUC': scores.get('auc')})
     summary = pd.DataFrame(rows)
     evaluated = summary[summary.Status == 'Evaluated']
     cols = st.columns(3)
@@ -79,14 +89,14 @@ def overall_results(targets):
         'Test peptides': st.column_config.NumberColumn(format='%d')})
     st.download_button('Download organism comparison', summary.to_csv(index=False), 'organism_comparison.csv', 'text/csv')
 
-def target_page(pipeline):
+def target_page(pipeline, engine):
     if not BUNDLE.exists():
         st.info('Prepare the target models with python -m peptide_lab.targets.')
         return
     targets = load_targets(BUNDLE.stat().st_mtime_ns)
     view = st.radio('View', ['Screen one organism', 'Overall results'], horizontal=True, key='target_view')
     if view == 'Overall results':
-        overall_results(targets)
+        overall_results(targets, engine)
         return
     code = st.selectbox('Target organism', list(targets), key='target_organism',
                         format_func=lambda k: targets[k]['name'] + (' (insufficient data)' if 'model' not in targets[k] else ''))
@@ -95,7 +105,7 @@ def target_page(pipeline):
         st.info('No viral assay model is available. GRAMPA and the bacterial MIC measurements in QMAP provide no SARS-CoV-2 labels.')
         st.caption('The 2022 ACovPepDB study reported 50 peptides with activity against SARS-CoV-2. Its full coronavirus collection spans 18 assay types. These are published evidence counts. Viral inhibition and bacterial MIC measure different endpoints. [ACovPepDB publication](https://pmc.ncbi.nlm.nih.gov/articles/PMC9192597/)')
         return
-    st.caption('The target score estimates whether the recorded minimum inhibitory concentration (MIC) is at or below 10 µM for this organism. The sidebar engine supplies general activity and toxicity scores.')
+    st.caption('The target score estimates whether measured MIC is at or below 10 µM for this organism. The sidebar engine supplies general activity, toxicity and organism-specific activity for each new run.')
     if 'model' not in entry:
         st.info(f"{entry['grampa_sequences']} eligible GRAMPA sequences and {entry['extra']} additional QMAP sequences give {entry['sequences']} in total. "
                 f"{entry['lower_mic']} are in the lower-MIC group and {entry['higher_mic']} are above the cutoff. "
@@ -105,14 +115,20 @@ def target_page(pipeline):
         pool = 'GRAMPA + QMAP' if entry['training_pool'] == 'Expanded' else 'GRAMPA'
         baseline_pool = 'GRAMPA + QMAP' if entry['baseline_pool'] == 'Expanded' else 'GRAMPA'
         st.write(f"{entry['grampa_sequences']:,} GRAMPA sequences qualified. QMAP contributed {entry['extra']:,} additional eligible sequences. "
-                 f"The selected model trained on {entry['train_count']:,} sequences from {pool}. Both models were tested on the same {len(entry['test']):,} held-out sequences.")
+                 f"The compact model trained on {entry['train_count']:,} sequences from {pool}. All models were tested on the same {len(entry['test']):,} held-out sequences.")
         results = []
         for label, source, scores in [('Baseline · Logistic regression', baseline_pool, entry['baseline']),
                                       ('Selected · ' + entry['method'], pool, entry)]:
             results.append({'Model': label, 'Training data': source, 'ROC-AUC': round(scores['auc'], 3),
                             'Accuracy': f"{scores['accuracy']:.1%}", 'Balanced accuracy': f"{scores['balanced_accuracy']:.1%}"})
+        if 'esm_metrics' in entry:
+            scores = entry['esm_metrics']
+            st.write(f"ESM-2 + CNN used {entry['esm_train_count']:,} training and {entry['esm_validation_count']:,} validation sequences from {pool}. "
+                     f"Validation selected epoch {entry['esm_best_epoch']}.")
+            results.append({'Model':'ESM-2 + CNN', 'Training data':pool, 'ROC-AUC':round(scores['auc'],3),
+                            'Accuracy':f"{scores['accuracy']:.1%}", 'Balanced accuracy':f"{scores['balanced_accuracy']:.1%}"})
         st.dataframe(pd.DataFrame(results), hide_index=True, use_container_width=True)
-        st.caption('Both models use 25 sequence descriptors. Validation ROC-AUC chose the model and training data. '
+        st.caption('The compact models use 25 sequence descriptors. ESM-2 uses frozen embeddings and a CNN trained on labels for this organism. '
                    'Test accuracy counts correct classifications at a score cutoff of 0.5. ROC-AUC measures how well the scores order the two MIC groups. '
                    'Identical sequences are separated between training and test, but related peptides may occur in both. '
                    'A score for one organism does not establish selectivity against other organisms.')
@@ -132,17 +148,17 @@ def target_page(pipeline):
         try:
             pipe = pipeline()
             if mode=='Generate peptides':
-                frame, audit = pipe.generate(count=count,seed=int(seed))
+                frame, audit = pipe.generate(count=count,seed=int(seed),target_entry=entry)
                 if frame.empty:
                     raise ValueError('No generated peptides passed the sequence filters.')
             else:
                 sequences = parse_sequences(raw) if mode=='Enter sequences' else seqs
-                frame = pipe.predict(sequences)
+                frame = pipe.predict(sequences,target_entry=entry)
             result = rank_target(frame,code,entry,pipe.ranking_rule,pipe.activity_weight)
             if mode=='Dataset peptides':
                 result = result.merge(test[['sequence','label']].rename(columns={'label':'observed_lower_MIC_label'}),on='sequence',validate='one_to_one')
             st.session_state[result_key] = (code,mode,result)
-            settings = {'organism': code, 'source': mode, 'general_engine': pipe.engine, 'ranking_rule': pipe.ranking_rule}
+            settings = {'organism': code, 'source': mode, 'general_engine': pipe.engine, 'target_engine':pipe.engine, 'ranking_rule': pipe.ranking_rule}
             if pipe.ranking_rule != 'product':
                 settings['activity_weight'] = pipe.activity_weight
             if mode == 'Generate peptides':

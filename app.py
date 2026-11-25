@@ -1,5 +1,6 @@
 """Run: python -m streamlit run app.py"""
 import json
+from copy import copy
 import pandas as pd
 import streamlit as st
 import altair as alt
@@ -25,6 +26,7 @@ st.sidebar.divider()
 esm_ready = all((ROOT / f'Models/esm2_heads/{task}.pt').exists() for task in ['activity','toxicity'])
 if esm_ready:
     st.sidebar.selectbox('Prediction engine', ['Compact baseline (fast)', 'ESM-2 + CNN'], key='prediction_engine_choice', help='Applies to new dataset, custom and generation predictions. Saved history retains its original engine.')
+engine = 'esm2' if st.session_state.get('prediction_engine_choice') == 'ESM-2 + CNN' else 'compact'
 
 st.sidebar.selectbox('Ranking rule', ['Product', 'Weighted difference'], key='rank_rule')
 if st.session_state.rank_rule == 'Weighted difference':
@@ -35,12 +37,16 @@ def read_json(name):
     return json.loads((RESULTS / name).read_text(encoding='utf-8'))
 
 @st.cache_resource
-def load_pipeline(engine, rule, weight):
+def load_pipeline(engine):
     from peptide_lab.pipeline import ScreeningPipeline
-    return ScreeningPipeline(engine=engine, ranking_rule=rule, activity_weight=weight)
+    return ScreeningPipeline(engine=engine)
 
 def pipeline():
-    return load_pipeline('esm2' if st.session_state.get('prediction_engine_choice') == 'ESM-2 + CNN' else 'compact', 'weighted_difference' if st.session_state.get('rank_rule') == 'Weighted difference' else 'product', st.session_state.get('rank_weight', .5))
+    # Share read-only model weights while keeping ranking settings local to this run.
+    run = copy(load_pipeline(engine))
+    run.ranking_rule = 'weighted_difference' if st.session_state.get('rank_rule') == 'Weighted difference' else 'product'
+    run.activity_weight = st.session_state.get('rank_weight', .5)
+    return run
 
 def hero(title, subtitle):
     st.markdown(f'<div class="hero"><h1>{title}</h1><p>{subtitle}</p></div>', unsafe_allow_html=True)
@@ -53,7 +59,9 @@ def table(frame):
         'toxicity_score': st.column_config.NumberColumn('Toxicity score ↓', format='%.3f'),
     })
     if 'prediction_engine' in frame and not frame.empty:
-        st.caption('Prediction engine for these results: ' + ', '.join(frame.prediction_engine.unique()))
+        saved = frame.iloc[0]
+        rule = 'Product' if saved.ranking_rule == 'product' else f'Weighted difference (activity weight {saved.activity_weight:.2f})'
+        st.caption(f"Last completed run · {saved.prediction_engine} · {rule}. Run again to apply new settings.")
     st.download_button('Download complete results · CSV', frame.to_csv(index=False).encode(), 'peptidelab_results.csv', 'text/csv')
     with st.expander('How to interpret these results'):
         st.write('Activity score: support for the antimicrobial class. Toxicity score: support for the toxic class. Both are model scores, not calibrated probabilities. Classification threshold = 0.5.')
@@ -90,7 +98,7 @@ if page == 'Overview':
 elif page == 'Target-specific screening':
     st.title('Target-specific screening')
     from peptide_lab.target_dashboard import target_page
-    target_page(pipeline)
+    target_page(pipeline, engine)
 
 elif page == 'Dataset explorer':
     hero('Predict directly from the data.', 'Browse known peptides, run both predictors, and compare scores with available benchmark labels.')
