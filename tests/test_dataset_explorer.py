@@ -49,10 +49,7 @@ class DatasetTests(unittest.TestCase):
         self.assertFalse(app.exception)
         self.assertTrue(app.info)
 
-    def test_research_page_and_preserved_model_weights(self):
-        app=AppTest.from_file(str(ROOT/'app.py'),default_timeout=120).run()
-        app.sidebar.radio[0].set_value('Research checks').run()
-        self.assertFalse(app.exception)
+    def test_preserved_model_weights(self):
         recorded=json.loads((RESULTS/'run_manifest.json').read_text())['model_sha256']
         for name,digest in recorded.items():
             self.assertEqual(hashlib.sha256((MODELS/name).read_bytes()).hexdigest(),digest)

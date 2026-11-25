@@ -1,9 +1,7 @@
 """Additional dashboard pages; training stays outside the user interface."""
-import json
 from datetime import datetime
 import pandas as pd
 import streamlit as st
-from .config import RESULTS
 from .datasets import catalog, browse, attach_labels, SOURCES
 
 @st.cache_data
@@ -123,41 +121,3 @@ def history_page(table):
         table(run['frame'])
         inspection(run['frame'],'history_inspection')
     st.caption('History is session-local and clears on a new session. Download CSVs to retain your work.')
-
-def research_page():
-    from .esm_dashboard import alignment_checks_page
-    alignment_checks_page()
-    path = RESULTS / 'extended/research_summary.json'
-    if not path.exists():
-        st.info('Extended evaluation has not been run yet. Run python -m peptide_lab.evaluation.')
-        return
-    summary = json.loads(path.read_text())
-    tabs = st.tabs(['Dataset audit','Latent diagnostics','Predictor checks','Ranking sensitivity','Controlled toy study'])
-    with tabs[0]:
-        st.json(json.loads((RESULTS/'preprocessing_audit.json').read_text()))
-        st.write('The original notebooks are preserved. This audit regenerates canonical sequences directly from the raw CSV.')
-    with tabs[1]:
-        st.dataframe(pd.DataFrame(summary['latent_diagnostics']),hide_index=True,use_container_width=True)
-        st.caption('Same validation sequences and true decoder prefixes; only latent vectors change. Higher reconstruction loss with zero/shuffled vectors indicates that this decoder uses latent information. It does not prove biological meaning.')
-        st.write('Active latent dimensions (variance of encoder mean > 0.01):',summary['active_latent_dimensions'])
-        st.dataframe(pd.read_csv(RESULTS/'extended/reconstruction_examples.csv'),hide_index=True,use_container_width=True)
-    with tabs[2]:
-        st.dataframe(pd.DataFrame(summary['predictor_checks']),hide_index=True,use_container_width=True)
-        st.caption('The length-only baseline is trained only on training labels. Short-peptide results use the existing test subset; this is a post-hoc diagnostic, not a new untouched test set. Brier score measures squared probability error; displayed inference scores remain uncalibrated.')
-        st.warning('Inspect positive/negative counts and balanced accuracy: the short activity subset has very few negative examples, so its raw accuracy is not a strong generalization result.')
-        st.dataframe(pd.DataFrame(summary['confidence_intervals']),hide_index=True,use_container_width=True)
-        st.caption('95% stratified bootstrap intervals reflect test-sample variation, not training-seed or sequence-family uncertainty.')
-        for task in ['activity','toxicity']:
-            with st.expander(task.title()+' held-out errors'):
-                st.dataframe(pd.read_csv(RESULTS/f'extended/{task}_errors.csv').head(50),hide_index=True,use_container_width=True)
-    with tabs[3]:
-        st.dataframe(pd.DataFrame(summary['ranking_sensitivity']),hide_index=True,use_container_width=True)
-        st.caption('Compare the product rule with illustrative weighted activity-minus-toxicity rules. Weights express preferences; they were not learned as biological utility. Top-10 overlap measures stability on the saved candidate pool only.')
-    with tabs[4]:
-        study = RESULTS/'extended/toy_study_summary.csv'
-        if study.exists():
-            st.dataframe(pd.read_csv(study),hide_index=True,use_container_width=True)
-            st.dataframe(pd.read_csv(RESULTS/'extended/toy_study_runs.csv'),hide_index=True,use_container_width=True)
-            st.caption('New controlled experiments, not recovered historical Notebook 02B results. Ten subsets use the default configuration; latent dimension and word-dropout comparisons use three matched seeds. Small-subset findings do not establish full-dataset optimal settings.')
-        else:
-            st.info('The controlled toy study is still running or has not been executed.')

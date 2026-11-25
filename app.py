@@ -6,7 +6,9 @@ import streamlit as st
 import altair as alt
 from peptide_lab.config import MODELS, RESULTS, ROOT
 from peptide_lab.features import parse_sequences
-from peptide_lab.dashboard import dataset_page, history_page, research_page, save_run, inspection
+from peptide_lab.dashboard import dataset_page, history_page, save_run, inspection
+
+from peptide_lab.tour import STOPS, show_tour
 
 st.set_page_config(page_title='PeptideLab | Generate · Screen · Understand', page_icon='🧬', layout='wide')
 st.markdown('''<style>
@@ -21,7 +23,7 @@ h1,h2,h3 {color:#102d42; letter-spacing:-.025em;}
 </style>''', unsafe_allow_html=True)
 st.sidebar.title('🧬 PeptideLab')
 st.sidebar.caption('STATISTICAL LEARNING · GROUP 4')
-page = st.sidebar.radio('Workspace', ['Overview', 'Dataset explorer', 'Target-specific screening', 'Generate & rank', 'Screen sequences', 'Prediction history', 'Model results', 'Research checks', 'ESM-2 comparison', 'Learn the project'], key='workspace')
+page = st.sidebar.radio('Workspace', list(STOPS), key='workspace')
 st.sidebar.divider()
 esm_ready = all((ROOT / f'Models/esm2_heads/{task}.pt').exists() for task in ['activity','toxicity'])
 if esm_ready:
@@ -76,6 +78,8 @@ if not ready:
     st.code('python -m peptide_lab.training\npython -m peptide_lab.pipeline')
     st.stop()
 
+show_tour(page)
+
 if page == 'Overview':
     hero('PeptideLab', 'Explore general antimicrobial activity and toxicity, then compare the prediction for a particular organism.')
     a, t, v = read_json('activity_metrics.json'), read_json('toxicity_metrics.json'), read_json('vae_metrics.json')
@@ -107,15 +111,6 @@ elif page == 'Dataset explorer':
 elif page == 'Prediction history':
     hero('Your recent prediction runs.', 'Revisit generated, custom, and dataset predictions and export complete results.')
     history_page(table)
-
-elif page == 'ESM-2 comparison':
-    hero('Pretrained protein representations.', 'Compare ESM-2 plus CNN with the compact baseline on the same saved splits.')
-    from peptide_lab.esm_dashboard import esm_page
-    esm_page()
-
-elif page == 'Research checks':
-    hero('Inspect the research evidence.', 'Reproducible preprocessing, latent diagnostics, baseline checks, and ranking sensitivity.')
-    research_page()
 
 elif page == 'Generate & rank':
     hero('Explore new candidates.', 'Sample the VAE, apply sequence-quality filters, and screen the accepted candidates with both predictors.')
@@ -198,73 +193,5 @@ elif page == 'Screen sequences':
 
 elif page == 'Model results':
     hero('Model results', 'Compare held-out test scores, training curves and hyperparameter trials.')
-    tabs = st.tabs(['Activity predictor', 'Toxicity predictor', 'VAE generator', 'Data provenance'])
-    for tab, task in zip(tabs[:2], ['activity', 'toxicity']):
-        with tab:
-            view = st.radio('Results view', ['Baseline results', 'Hyperparameter tuning'], horizontal=True, key='results_view_'+task)
-            if view == 'Hyperparameter tuning':
-                from peptide_lab.tuning_dashboard import tuning_page
-                tuning_page(task)
-            else:
-                report = read_json(task + '_metrics.json')
-                st.write(f'**Selected model:** {report["selected_model"]} · chosen by validation ROC-AUC · threshold 0.5')
-                rows = [{"model": name, **{k: v for k, v in values.items() if k != 'confusion_matrix'}} for name, values in report['test'].items()]
-                st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.markdown('**Training / validation**')
-                    history = pd.read_csv(RESULTS / f'{task}_history.csv').set_index('epoch')
-                    st.line_chart(history[['validation_auc']])
-                    st.caption('Validation ROC-AUC across epochs; best checkpoint retained.')
-                with c2:
-                    st.markdown('**Test confusion matrix**')
-                    matrix = report['test'][report['selected_model']]['confusion_matrix']
-                    st.dataframe(pd.DataFrame(matrix, index=['Actual negative', 'Actual positive'], columns=['Predicted negative', 'Predicted positive']))
-                    st.caption('Positive means antimicrobial for activity; toxic for toxicity.')
-                st.markdown('**Interpretable baseline · feature importance**')
-                importance = pd.read_csv(RESULTS / f'{task}_feature_importance.csv').head(10).set_index('feature')
-                st.bar_chart(importance)
-                st.caption('Random-forest impurity importance; descriptive association, not a causal explanation.')
-                st.info(report['limitations'])
-                with st.expander('Dataset audit / split counts'):
-                    st.json(read_json(task + '_data_audit.json'))
-    with tabs[2]:
-        view = st.radio('Results view', ['Baseline results', 'Hyperparameter tuning'], horizontal=True, key='results_view_vae')
-        if view == 'Hyperparameter tuning':
-            from peptide_lab.tuning_dashboard import tuning_page
-            tuning_page('vae')
-        else:
-            report = read_json('vae_metrics.json')
-            cols = st.columns(3)
-            cols[0].metric('Unique samples / 500', report['unique'])
-            cols[1].metric('Exact novelty vs GRAMPA', f'{report["novel_unique_vs_grampa"]:.1%}')
-            cols[2].metric('Natural END rate', f'{report["natural_end_rate"]:.1%}')
-            history = pd.read_csv(RESULTS / 'vae_history.csv').set_index('epoch')
-            st.line_chart(history[['train_reconstruction', 'validation_reconstruction']])
-            st.caption('Cross-entropy per non-padding token. Lower is better; training includes word dropout and sampled latent vectors, validation uses the latent mean.')
-            st.write(f'Test teacher-forced token accuracy: **{report["test_teacher_forced_token_accuracy"]:.1%}**. This is not whole-peptide reconstruction accuracy.')
-            st.info(report['notes'])
-            st.dataframe(pd.read_csv(RESULTS / 'vae_raw_generation.csv').head(20), hide_index=True)
-    with tabs[3]:
-        st.write('GRAMPA supplies the generator sequences. Published UniDL4BioPep activity and toxicity datasets supply the classifier labels. External files are pinned to a Git commit with SHA-256 checksums.')
-        st.markdown('[GRAMPA source](https://github.com/zswitten/Antimicrobial-Peptides) · [UniDL4BioPep source](https://github.com/dzjxzyd/UniDL4BioPep)')
-        st.json(json.loads((ROOT / 'Data/external/sources.json').read_text()))
-        st.warning('These are sequence-disjoint splits, not sequence-similarity-clustered splits. Benchmark performance can overestimate performance on unrelated peptide families. Activity negatives also have different length distributions; the baseline can exploit this dataset bias.')
-
-else:
-    hero('Understand every step.', 'A compact explanation for the project demonstration and viva.')
-    explanations = {
-        '1. What is our problem?': 'We want to narrow a large sequence search space into candidates for future experimental investigation. We combine generation with two independent screening tasks.',
-        '2. How does the VAE work?': 'The encoder LSTM reads amino acids and predicts a latent mean and variance. Reparameterization samples z = mean + standard deviation × noise. The decoder LSTM predicts the next amino acid from z and previous residues. Training balances reconstruction cross-entropy and KL regularization.',
-        '3. Why use KL loss and word dropout?': 'KL keeps the latent distribution near a standard normal, so random latent sampling is possible. Warmup gradually adds this constraint. Word dropout removes some previous-token information during training to encourage the decoder to use z.',
-        '4. How do the predictors work?': 'Each task has its own labels and weights. A CNN detects local patterns with kernels of sizes 3, 5, and 7; global max pooling combines them with 25 simple descriptors. A random forest is an interpretable baseline. Validation AUC chooses CNN, forest, or their equal-weight ensemble.',
-        '5. What is training vs validation vs test?': 'Training adjusts weights. Validation selects a checkpoint and model. The published test split is reserved for final evaluation. Identical sequences cannot appear across splits after cleaning. Similar, nonidentical sequences can still cross splits.',
-        '6. What do the metrics mean?': 'Precision: how many predicted positives are correct. Recall: how many actual positives are found. F1 balances both. ROC-AUC measures ordering of positives vs negatives across thresholds. MCC measures classification agreement while accounting for all four confusion-matrix cells.',
-        '7. How do we rank candidates?': 'Priority = 100 × activity score × (1 − toxicity score). A candidate needs both a high activity score and a low toxicity score to rank highly. This is a decision rule, not proof that it works or is safe.',
-        '8. How is this different from UniDL4BioPep?': 'We use its published benchmark data, not its reported results or pretrained weights. Our compact CNN learns residue embeddings directly and adds interpretable features; a separate frozen ESM-2 plus CNN engine is also available. Both are adaptations, not exact paper reproductions.',
-        '9. How does organism-specific screening work?': 'Choose an organism to see whether its model predicts a measured MIC at or below 10 µM. Compare that score to general antimicrobial activity and toxicity in the same row. Overall results gives each evaluated organism equal weight in the reported average.',
-        '10. What are the limitations?': 'Scores are computational estimates. The organism models classify MIC into two groups. Toxicity labels are dataset-specific, and related sequences or differences in length may affect test results. Novelty checks compare exact sequence matches.',
-    }
-    for title, body in explanations.items():
-        with st.expander(title, expanded=title.startswith('1.')):
-            st.write(body)
+    from peptide_lab.results_dashboard import results_page
+    results_page()

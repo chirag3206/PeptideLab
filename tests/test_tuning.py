@@ -38,13 +38,13 @@ class TuningTests(unittest.TestCase):
         app=AppTest.from_file(str(ROOT/'app.py'),default_timeout=60).run()
         self.assertNotIn('Hyperparameter tuning',app.sidebar.radio[0].options)
         app.sidebar.radio[0].set_value('Model results').run()
-        for task in ['activity','toxicity','vae']:
+        for task in ['activity','toxicity']:
             app.radio(key='results_view_'+task).set_value('Hyperparameter tuning').run()
             self.assertFalse(app.exception,str(app.exception))
             self.assertIsNotNone(app.selectbox(key='tuning_family_'+task))
             tables=[d.value for d in app.dataframe if 'Configuration' in d.value.columns]
             self.assertTrue(any(len(frame)==4 and frame.iloc[0]['Configuration']=='Default' for frame in tables))
-        # All three tuning views can coexist without duplicate widget IDs.
+        # Both classifier tuning views can coexist.
         app.selectbox(key='tuning_family_activity').set_value('forest').run()
         self.assertFalse(app.exception,str(app.exception))
         tables=[d.value for d in app.dataframe if 'Configuration' in d.value.columns]
@@ -57,9 +57,14 @@ class TuningTests(unittest.TestCase):
         self.assertEqual(len(tables),1)
         self.assertEqual(len(tables[0]),2)
         self.assertNotIn('ensemble',app.selectbox(key='tuning_family_toxicity').options)
-        for task in ['activity','toxicity','vae']:
+        for task in ['activity','toxicity']:
             app.radio(key='results_view_'+task).set_value('Baseline results').run()
             self.assertFalse(app.exception,str(app.exception))
+
+        app.radio(key='results_section').set_value('VAE generator').run()
+        app.radio(key='results_view_vae').set_value('Hyperparameter tuning').run()
+        self.assertFalse(app.exception)
+        self.assertIsNotNone(app.selectbox(key='tuning_family_vae'))
 
     def test_readable_tables_match_saved_results(self):
         from peptide_lab.tuning_dashboard import comparison_table, test_comparison

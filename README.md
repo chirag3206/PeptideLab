@@ -40,7 +40,8 @@ TB and SARS-CoV-2 have evidence summaries. To reproduce the organism benchmarks 
 - **Label comparison:** compare predictions with available benchmark labels and inspect each predictor's split membership. Missing labels remain unavailable.
 - **Prediction history:** revisit the latest ten runs within a browser session and download results.
 - **Evaluation dashboard:** inspect held-out metrics, confusion matrices, validation curves, feature importance, and data provenance.
-- **Research checks:** explore latent-vector diagnostics, predictor bias, bootstrap intervals, ranking sensitivity, and 22 controlled toy-VAE experiments.
+- **Dashboard tour:** a first-visit walkthrough opens each workspace. Use the sidebar to replay it during the session.
+- **Model results:** choose Compact baseline, ESM-2 + CNN, or Engine comparison for held-out predictor results. The VAE generator has its own results and tuning view. The complete report contains the research checks.
 - **Learning resources:** executed notebooks, a final report, and explanations for the demonstration and viva.
 
 ## Workflow

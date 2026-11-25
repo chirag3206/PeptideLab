@@ -45,7 +45,7 @@ class FinalAlignmentTests(unittest.TestCase):
     def test_new_dashboard_pages_and_conditional_controls(self):
         from streamlit.testing.v1 import AppTest
         at=AppTest.from_file(str(ROOT/'app.py'),default_timeout=60).run()
-        for page in ['ESM-2 comparison','Research checks','Dataset explorer']:
+        for page in ['Model results','Dataset explorer']:
             at.sidebar.radio[0].set_value(page).run()
             self.assertFalse(at.exception, str(at.exception))
         at.selectbox(key='dataset_batch_mode').set_value('Random sample of filtered dataset').run()
